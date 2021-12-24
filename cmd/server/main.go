@@ -3,28 +3,31 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"github.com/IlyaYP/devops/cmd/server/handlers/handlers.go"
 )
 
-func update(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("request URL:", r.URL)
-	////fmt.Println("request Headers:", r.Header)
-	//body, _ := io.ReadAll(r.Body)
-	//fmt.Println("request Body:", string(body))
-
-	_, err := w.Write([]byte("OK"))
-	if err != nil {
-		return 
-	}
-}
+//func update(w http.ResponseWriter, r *http.Request) {
+//	fmt.Println("request URL:", r.URL)
+//	////fmt.Println("request Headers:", r.Header)
+//	//body, _ := io.ReadAll(r.Body)
+//	//fmt.Println("request Body:", string(body))
+//
+//	_, err := w.Write([]byte("OK"))
+//	if err != nil {
+//		return
+//	}
+//}
 
 func HelloWorld(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("<h1>Hello, World</h1>"))
+
 }
 
 func main() {
     // маршрутизация запросов обработчику
     http.HandleFunc("/", HelloWorld)
-	http.HandleFunc("/update/", update)
+	http.HandleFunc("/update/", updateHandler)
     // запуск сервера с адресом localhost, порт 8080
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
@@ -32,11 +35,6 @@ func main() {
 	}
 }
 
-
-
-/*
-http://<АДРЕС_СЕРВЕРА>/update/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>/<ЗНАЧЕНИЕ_МЕТРИКИ>
-*/
 /*
 http://<АДРЕС_СЕРВЕРА>/update/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>/<ЗНАЧЕНИЕ_МЕТРИКИ>
 */
