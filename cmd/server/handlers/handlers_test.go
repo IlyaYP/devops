@@ -25,8 +25,8 @@ func TestUpdateHandler(t *testing.T) {
 		endpoint string
 	}{
 		{
-			name:     "positive test #1",            // TODO: Add test cases.
-			endpoint: "/update/gauage/Alloc/201456", //"http://localhost:8080/update/gauage/Alloc/201456",
+			name:     "positive test #1",           // TODO: Add test cases.
+			endpoint: "/update/gauge/Alloc/201456", //"http://localhost:8080/update/gauage/Alloc/201456",
 			want: want{
 				code:        200,
 				response:    `OK`,

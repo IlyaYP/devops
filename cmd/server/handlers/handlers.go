@@ -20,7 +20,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	//update/unknown/testCounter/100
 	mtypes := map[string]string{
-		"gauage":  "",
+		"gauge":   "",
 		"counter": "",
 	}
 	mrtm := map[string]string{
@@ -57,17 +57,21 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	k := strings.Split(r.URL.String(), "/")
 
+	// Check Metric Type
 	_, ok := mtypes[k[2]]
 	if !ok {
 		http.Error(w, "no such type", http.StatusInternalServerError)
 		return
 	}
+
+	// Check Metric Name
 	_, ok = mrtm[k[3]]
 	if !ok {
 		http.Error(w, "no such metric", http.StatusNotFound)
 		return
 	}
 
+	// Check Metric Value
 	v, err := strconv.ParseFloat(k[4], 64)
 	if err != nil {
 		http.Error(w, "not found", http.StatusBadRequest)
