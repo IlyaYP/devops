@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -130,12 +131,17 @@ func WriteMetric(m string) error {
 		"testCounter":   "",
 	}
 	k := strings.Split(m, "/")
-	fmt.Println("request URL:", k[3])
 
 	_, ok := mrtm[k[3]]
 	if !ok {
 		return fmt.Errorf("no such metric")
 	}
+
+	v, err := strconv.ParseFloat(k[4], 64)
+	if err != nil {
+		return err
+	}
+	fmt.Println("request URL:", k[3], v)
 
 	//return nil, fmt.Errorf("orderProcessorSvc init: %w", err)
 	return nil
