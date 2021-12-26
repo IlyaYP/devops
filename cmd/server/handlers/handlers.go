@@ -17,6 +17,12 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 //request URL: /update/counter/PollCount/2
 //request URL: /update/gauage/Alloc/201456
 func UpdateHandler(w http.ResponseWriter, r *http.Request) {
+
+	//update/unknown/testCounter/100
+	mtypes := map[string]string{
+		"gauage":  "",
+		"counter": "",
+	}
 	mrtm := map[string]string{
 		"Alloc":         "123456789",
 		"BuckHashSys":   "",
@@ -51,9 +57,14 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	k := strings.Split(r.URL.String(), "/")
 
-	_, ok := mrtm[k[3]]
+	_, ok := mtypes[k[2]]
 	if !ok {
-		http.Error(w, "not found", http.StatusNotFound)
+		http.Error(w, "no such type", http.StatusInternalServerError)
+		return
+	}
+	_, ok = mrtm[k[3]]
+	if !ok {
+		http.Error(w, "no such metric", http.StatusNotFound)
 		return
 	}
 
