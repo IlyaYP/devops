@@ -60,7 +60,8 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// Check Metric Type
 	_, ok := mtypes[k[2]]
 	if !ok {
-		http.Error(w, "no such type", http.StatusInternalServerError)
+		//http.Error(w, "no such type", http.StatusInternalServerError)
+		http.Error(w, "no such type", http.StatusNotImplemented)
 		return
 	}
 
