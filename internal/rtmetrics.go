@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -94,4 +95,47 @@ func NewMonitor(duration int, messages chan string) {
 		//fmt.Printf("...%v", PollCount)
 		PollCount++
 	}
+}
+
+func WriteMetric(m string) error {
+	mrtm := map[string]string{
+		"Alloc":         "123456789",
+		"BuckHashSys":   "",
+		"Frees":         "",
+		"GCCPUFraction": "",
+		"GCSys":         "",
+		"HeapAlloc":     "",
+		"HeapIdle":      "",
+		"HeapInuse":     "",
+		"HeapObjects":   "",
+		"HeapReleased":  "",
+		"HeapSys":       "",
+		"LastGC":        "",
+		"Lookups":       "",
+		"MCacheInuse":   "",
+		"MCacheSys":     "",
+		"MSpanInuse":    "",
+		"MSpanSys":      "",
+		"Mallocs":       "",
+		"NextGC":        "",
+		"NumForcedGC":   "",
+		"NumGC":         "",
+		"OtherSys":      "",
+		"PauseTotalNs":  "",
+		"StackInuse":    "",
+		"StackSys":      "",
+		"Sys":           "",
+		"RandomValue":   "",
+		"PollCount":     "",
+	}
+	k := strings.Split(m, "/")
+	fmt.Println("request URL:", k[3])
+
+	_, ok := mrtm[k[3]]
+	if !ok {
+		return fmt.Errorf("no such metric")
+	}
+
+	//return nil, fmt.Errorf("orderProcessorSvc init: %w", err)
+	return nil
 }

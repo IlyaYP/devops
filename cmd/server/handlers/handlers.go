@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"github.com/IlyaYP/devops/internal"
 	"net/http"
 )
 
@@ -15,22 +15,22 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 //request URL: /update/counter/PollCount/2
 //request URL: /update/gauage/Alloc/201456
 func UpdateHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("request URL:", r.URL)
+
+	err := internal.WriteMetric(r.URL.String())
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
 	////fmt.Println("request Headers:", r.Header)
 	//body, _ := io.ReadAll(r.Body)
 	//fmt.Println("request Body:", string(body))
 
-	//user, ok := Metrics[Metric]
-	//if !ok {
-	//	http.Error(r, "user not found", http.StatusNotFound)
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	//_, err = w.Write([]byte("OK"))
+	//if err != nil {
 	//	return
 	//}
-
-	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte("OK"))
-	if err != nil {
-		return
-	}
 }
 
 //var mux map[string]int
