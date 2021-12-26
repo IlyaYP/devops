@@ -17,8 +17,10 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 //request URL: /update/counter/PollCount/2
 //request URL: /update/gauage/Alloc/201456
 func UpdateHandler(w http.ResponseWriter, r *http.Request) {
-
-	//update/unknown/testCounter/100
+	//fmt.Println(r.URL.String())
+	//fmt.Println(chi.URLParam(r, "MType"), chi.URLParam(r, "MName"),
+	//	chi.URLParam(r, "MVal")) //{MType}/{MName}/{MVal}
+	////update/unknown/testCounter/100
 	mtypes := map[string]string{
 		"gauge":   "",
 		"counter": "",
