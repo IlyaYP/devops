@@ -67,11 +67,12 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check Metric Name
+	//Check Metric Name
 	_, ok = mrtm[k[3]]
 	if !ok {
-		http.Error(w, "no such metric", http.StatusNotFound)
-		return
+		//http.Error(w, "no such metric", http.StatusNotFound)
+		//return
+		
 	}
 
 	// Check Metric Value
