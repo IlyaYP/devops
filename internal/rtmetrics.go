@@ -127,6 +127,7 @@ func WriteMetric(m string) error {
 		"Sys":           "",
 		"RandomValue":   "",
 		"PollCount":     "",
+		"testCounter":   "",
 	}
 	k := strings.Split(m, "/")
 	fmt.Println("request URL:", k[3])
