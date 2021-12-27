@@ -63,7 +63,7 @@ func TestUpdateHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			if string(resBody) != tt.want.response {
-				//t.Errorf("Expected body %s, got %s", tt.want.response, w.Body.String())
+				t.Errorf("Expected body %s, got %s", tt.want.response, w.Body.String())
 			}
 
 			// заголовок ответа
