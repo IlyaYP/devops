@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/IlyaYP/devops/storage"
+	"strconv"
 	"sync"
 )
 
@@ -29,6 +30,17 @@ func (s Storage) PutMetric(ctx context.Context, MetricType, MetricName, MetricVa
 	if !ok {
 		return fmt.Errorf("wrong type")
 	}
+
+	if MetricType == "gauge" {
+		if _, err := strconv.ParseFloat(MetricValue, 64); err != nil {
+			return fmt.Errorf("wrong value")
+		}
+	} else if MetricType == "counter" {
+		if _, err := strconv.ParseInt(MetricValue, 10, 64); err != nil {
+			return fmt.Errorf("wrong value")
+		}
+	}
+
 	t[MetricName] = MetricValue
 
 	return nil
