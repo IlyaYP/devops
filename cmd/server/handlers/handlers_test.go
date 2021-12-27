@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"github.com/IlyaYP/devops/storage/inmemory"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
 func TestUpdateHandler(t *testing.T) {
+	st := inmemory.NewStorage()
 	// определяем структуру теста
 	type want struct {
 		code        int
@@ -42,7 +44,7 @@ func TestUpdateHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			// определяем хендлер
-			h := http.HandlerFunc(UpdateHandler)
+			h := http.HandlerFunc(UpdateHandler(st))
 
 			// запускаем сервер
 			h.ServeHTTP(w, request)
