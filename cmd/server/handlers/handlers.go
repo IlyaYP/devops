@@ -70,11 +70,11 @@ func UpdateHandler(st *inmemory.Storage) http.HandlerFunc {
 		}
 
 		//Check Metric Name
-		_, ok = mrtm[k[3]]
-		if !ok {
-			//http.Error(w, "no such metric", http.StatusNotFound)
-			//return
-		}
+		//_, ok = mrtm[k[3]]
+		//if !ok {
+		//	http.Error(w, "no such metric", http.StatusNotFound)
+		//	return
+		//}
 
 		// Check Metric Value
 		v, err := strconv.ParseFloat(k[4], 64)
