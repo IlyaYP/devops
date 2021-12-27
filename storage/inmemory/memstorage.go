@@ -11,7 +11,7 @@ import (
 var _ storage.MetricStorage = (*Storage)(nil) // Q: Вот это для чего? я ещё не изучил (
 
 type Storage struct {
-	*sync.RWMutex
+	sync.RWMutex
 	mtr map[string]map[string]string
 } //{mtr: make(map[string]map[string]string)}
 
@@ -22,7 +22,7 @@ func NewStorage() *Storage {
 	return &s
 }
 
-func (s Storage) PutMetric(ctx context.Context, MetricType, MetricName, MetricValue string) error {
+func (s *Storage) PutMetric(ctx context.Context, MetricType, MetricName, MetricValue string) error {
 	// To write to the storage, take the write lock:
 	s.Lock()
 	defer s.Unlock()
@@ -46,7 +46,7 @@ func (s Storage) PutMetric(ctx context.Context, MetricType, MetricName, MetricVa
 	return nil
 }
 
-func (s Storage) GetMetric(ctx context.Context, MetricType, MetricName string) (string, error) {
+func (s *Storage) GetMetric(ctx context.Context, MetricType, MetricName string) (string, error) {
 	// To read from the storage, take the read lock:
 	s.RLock()
 	defer s.RUnlock()
@@ -62,7 +62,7 @@ func (s Storage) GetMetric(ctx context.Context, MetricType, MetricName string) (
 
 	return n, nil
 }
-func (s Storage) ReadMetrics(ctx context.Context) map[string]map[string]string {
+func (s *Storage) ReadMetrics(ctx context.Context) map[string]map[string]string {
 	s.RLock()
 	defer s.RUnlock()
 	ret := make(map[string]map[string]string)
