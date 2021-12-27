@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/IlyaYP/devops/storage/inmemory"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -56,14 +57,14 @@ func TestUpdateHandler(t *testing.T) {
 			}
 
 			// получаем и проверяем тело запроса
-			//defer res.Body.Close()
-			//resBody, err := io.ReadAll(res.Body)
-			//if err != nil {
-			//	t.Fatal(err)
-			//}
-			//if string(resBody) != tt.want.response {
-			//	t.Errorf("Expected body %s, got %s", tt.want.response, w.Body.String())
-			//}
+			defer res.Body.Close()
+			resBody, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(resBody) != tt.want.response {
+				//t.Errorf("Expected body %s, got %s", tt.want.response, w.Body.String())
+			}
 
 			// заголовок ответа
 			//if res.Header.Get("Content-Type") != tt.want.contentType {
