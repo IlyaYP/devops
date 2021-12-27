@@ -13,6 +13,35 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 
 }
 
+//GET http://localhost:8080/value/counter/testSetGet33
+//GET http://localhost:8080/value/counter/PollCount
+func GetHandler(st *inmemory.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
+		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
+		//	chi.URLParam(r, "MName"), chi.URLParam(r, "MVal")); err != nil {
+		v, err := st.GetMetric(context.Background(), k[2], k[3])
+		if err != nil {
+			if err.Error() == "wrong type" {
+				http.Error(w, err.Error(), http.StatusNotImplemented)
+			} else if err.Error() == "no such metric" {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			} else {
+				http.Error(w, "unknown error", http.StatusBadRequest)
+			}
+			return
+		}
+
+		w.Header().Set("content-type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		if _, err := w.Write([]byte(v)); err != nil {
+			return
+		}
+
+	}
+}
+
 //http://<АДРЕС_СЕРВЕРА>/update/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>/<ЗНАЧЕНИЕ_МЕТРИКИ>
 //request URL: /update/counter/PollCount/2
 //request URL: /update/gauage/Alloc/201456

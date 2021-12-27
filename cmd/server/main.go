@@ -42,9 +42,7 @@ func main() {
 	//testStore(st)
 
 	r := chi.NewRouter()
-	//r.Get("/", func(rw http.ResponseWriter, r *http.Request) {
-	//	rw.Write([]byte("chi"))
-	//})
+	r.Get("/value/{MType}/{MName}", handlers.GetHandler(st))
 	r.Post("/update/{MType}/{MName}/{MVal}", handlers.UpdateHandler(st))
 	http.ListenAndServe(":8080", r)
 
