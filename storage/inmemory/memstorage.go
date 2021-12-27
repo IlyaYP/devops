@@ -10,7 +10,7 @@ import (
 var _ storage.MetricStorage = (*Storage)(nil) // Q: Вот это для чего? я ещё не изучил (
 
 type Storage struct {
-	sync.RWMutex
+	*sync.RWMutex
 	mtr map[string]map[string]string
 } //{mtr: make(map[string]map[string]string)}
 
