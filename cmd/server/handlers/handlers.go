@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 	"github.com/IlyaYP/devops/storage/inmemory"
-	"github.com/go-chi/chi/v5"
 	"net/http"
+	"strings"
 )
 
 func HelloWorld(w http.ResponseWriter, r *http.Request) {
@@ -18,8 +18,10 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 //request URL: /update/gauage/Alloc/201456
 func UpdateHandler(st *inmemory.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
-			chi.URLParam(r, "MName"), chi.URLParam(r, "MVal")); err != nil {
+		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
+		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
+		//	chi.URLParam(r, "MName"), chi.URLParam(r, "MVal")); err != nil {
+		if err := st.PutMetric(context.Background(), k[2], k[3], k[4]); err != nil {
 			if err.Error() == "wrong type" {
 				http.Error(w, err.Error(), http.StatusNotImplemented)
 			} else if err.Error() == "wrong value" {

@@ -25,7 +25,7 @@ func TestNewStorage(t *testing.T) {
 
 func TestStorage_GetMetric(t *testing.T) {
 	type fields struct {
-		RWMutex *sync.RWMutex
+		RWMutex sync.RWMutex
 		mtr     map[string]map[string]string
 	}
 	type args struct {
@@ -44,7 +44,7 @@ func TestStorage_GetMetric(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := Storage{
+			s := &Storage{
 				RWMutex: tt.fields.RWMutex,
 				mtr:     tt.fields.mtr,
 			}
@@ -62,7 +62,7 @@ func TestStorage_GetMetric(t *testing.T) {
 
 func TestStorage_PutMetric(t *testing.T) {
 	type fields struct {
-		RWMutex *sync.RWMutex
+		RWMutex sync.RWMutex
 		mtr     map[string]map[string]string
 	}
 	type args struct {
@@ -81,7 +81,7 @@ func TestStorage_PutMetric(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := Storage{
+			s := &Storage{
 				RWMutex: tt.fields.RWMutex,
 				mtr:     tt.fields.mtr,
 			}
@@ -94,7 +94,7 @@ func TestStorage_PutMetric(t *testing.T) {
 
 func TestStorage_ReadMetrics(t *testing.T) {
 	type fields struct {
-		RWMutex *sync.RWMutex
+		RWMutex sync.RWMutex
 		mtr     map[string]map[string]string
 	}
 	type args struct {
@@ -110,7 +110,7 @@ func TestStorage_ReadMetrics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := Storage{
+			s := &Storage{
 				RWMutex: tt.fields.RWMutex,
 				mtr:     tt.fields.mtr,
 			}

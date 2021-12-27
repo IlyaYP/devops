@@ -23,11 +23,13 @@ func NewStorage() *Storage {
 }
 
 func (s *Storage) PutMetric(ctx context.Context, MetricType, MetricName, MetricValue string) error {
+	fmt.Println("Put:", MetricType, MetricName, MetricValue)
 	// To write to the storage, take the write lock:
 	s.Lock()
 	defer s.Unlock()
 	t, ok := s.mtr[MetricType]
 	if !ok {
+		fmt.Println("Error:", MetricType, MetricName, MetricValue)
 		return fmt.Errorf("wrong type")
 	}
 
