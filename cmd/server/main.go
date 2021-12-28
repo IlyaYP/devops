@@ -42,6 +42,7 @@ func main() {
 	//testStore(st)
 
 	r := chi.NewRouter()
+	r.Get("/", handlers.ReadHandler(st))
 	r.Get("/value/{MType}/{MName}", handlers.GetHandler(st))
 	r.Post("/update/{MType}/{MName}/{MVal}", handlers.UpdateHandler(st))
 	http.ListenAndServe(":8080", r)

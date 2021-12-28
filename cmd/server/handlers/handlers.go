@@ -3,14 +3,54 @@ package handlers
 import (
 	"context"
 	"github.com/IlyaYP/devops/storage/inmemory"
+	"html/template"
+	"log"
 	"net/http"
+	"sort"
 	"strings"
 )
 
-func HelloWorld(w http.ResponseWriter, r *http.Request) {
+func ReadHandler(st *inmemory.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		m := st.ReadMetrics(context.Background())
+		w.WriteHeader(http.StatusOK)
+		var metrics []string
+		for k, v := range m {
+			for kk, vv := range v {
+				metrics = append(metrics, k+" "+kk+": "+vv)
+			}
+		}
+		sort.Strings(metrics)
 
-	w.Write([]byte("<h1>Hello, World</h1>"))
+		const tpl = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>{{.Title}}</title>
+  </head>
+  <body>
+    {{range .Items}}<div>{{.}}</div>{{else}}<div><strong>no data</strong></div>{{end}}
+  </body>
+</html>`
+		check := func(err error) {
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+		t, err := template.New("webpage").Parse(tpl)
+		check(err)
+		data := struct {
+			Title string
+			Items []string
+		}{
+			Title: "Metrics",
+			Items: metrics,
+		}
 
+		err = t.Execute(w, data)
+		check(err)
+	}
 }
 
 //GET http://localhost:8080/value/counter/testSetGet33
@@ -25,7 +65,7 @@ func GetHandler(st *inmemory.Storage) http.HandlerFunc {
 			if err.Error() == "wrong type" {
 				http.Error(w, err.Error(), http.StatusNotImplemented)
 			} else if err.Error() == "no such metric" {
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
 				http.Error(w, "unknown error", http.StatusBadRequest)
 			}
@@ -62,91 +102,5 @@ func UpdateHandler(st *inmemory.Storage) http.HandlerFunc {
 		}
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		/*
-
-			//fmt.Println(r.URL.String())
-			//fmt.Println(chi.URLParam(r, "MType"), chi.URLParam(r, "MName"),
-			//	chi.URLParam(r, "MVal")) //{MType}/{MName}/{MVal}
-			////update/unknown/testCounter/100
-			mtypes := map[string]string{
-				"gauge":   "",
-				"counter": "",
-			}
-
-			//mrtm := map[string]string{
-			//	"Alloc":         "123456789",
-			//	"BuckHashSys":   "",
-			//	"Frees":         "",
-			//	"GCCPUFraction": "",
-			//	"GCSys":         "",
-			//	"HeapAlloc":     "",
-			//	"HeapIdle":      "",
-			//	"HeapInuse":     "",
-			//	"HeapObjects":   "",
-			//	"HeapReleased":  "",
-			//	"HeapSys":       "",
-			//	"LastGC":        "",
-			//	"Lookups":       "",
-			//	"MCacheInuse":   "",
-			//	"MCacheSys":     "",
-			//	"MSpanInuse":    "",
-			//	"MSpanSys":      "",
-			//	"Mallocs":       "",
-			//	"NextGC":        "",
-			//	"NumForcedGC":   "",
-			//	"NumGC":         "",
-			//	"OtherSys":      "",
-			//	"PauseTotalNs":  "",
-			//	"StackInuse":    "",
-			//	"StackSys":      "",
-			//	"Sys":           "",
-			//	"RandomValue":   "",
-			//	"PollCount":     "",
-			//	"testCounter":   "",
-			//	"testGauge":     "",
-			//}
-			k := strings.Split(r.URL.String(), "/")
-
-			// Check Metric Type
-			_, ok := mtypes[k[2]]
-			if !ok {
-				//http.Error(w, "no such type", http.StatusInternalServerError)
-				http.Error(w, "no such type", http.StatusNotImplemented)
-				return
-			}
-
-			//Check Metric Name
-			//_, ok = mrtm[k[3]]
-			//if !ok {
-			//	http.Error(w, "no such metric", http.StatusNotFound)
-			//	return
-			//}
-
-			// Check Metric Value
-			v, err := strconv.ParseFloat(k[4], 64)
-			if err != nil {
-				http.Error(w, "not found", http.StatusBadRequest)
-				return
-			}
-			fmt.Println("request URL:", k[3], v)
-
-			//err := internal.WriteMetric(r.URL.String())
-			//if err != nil {
-			//	http.Error(w, "not found", http.StatusNotFound)
-			//	return
-			//}
-			////fmt.Println("request Headers:", r.Header)
-			//body, _ := io.ReadAll(r.Body)
-			//fmt.Println("request Body:", string(body))
-
-			w.Header().Set("content-type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			//_, err = w.Write([]byte("OK"))
-			//if err != nil {
-			//	return
-			//} */
 	}
 }
-
-//var mux map[string]int
-//m := make(map[string]int)
