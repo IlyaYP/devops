@@ -32,15 +32,24 @@ func (s *Storage) PutMetric(ctx context.Context, MetricType, MetricName, MetricV
 		fmt.Println("Error:", MetricType, MetricName, MetricValue)
 		return fmt.Errorf("wrong type")
 	}
-
 	if MetricType == "gauge" {
 		if _, err := strconv.ParseFloat(MetricValue, 64); err != nil {
 			return fmt.Errorf("wrong value")
 		}
 	} else if MetricType == "counter" {
-		if _, err := strconv.ParseInt(MetricValue, 10, 64); err != nil {
+		v, err := strconv.ParseInt(MetricValue, 10, 64)
+		if err != nil {
 			return fmt.Errorf("wrong value")
 		}
+		tv, ok := t[MetricName]
+		if !ok {
+			tv = "0"
+		}
+		vv, err := strconv.ParseInt(tv, 10, 64)
+		if err != nil {
+			return fmt.Errorf("strconv.ParseInt error")
+		}
+		MetricValue = strconv.FormatInt(v+vv, 10)
 	}
 
 	t[MetricName] = MetricValue

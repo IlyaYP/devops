@@ -67,7 +67,7 @@ func GetHandler(st *inmemory.Storage) http.HandlerFunc {
 			} else if err.Error() == "no such metric" {
 				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
-				http.Error(w, "unknown error", http.StatusBadRequest)
+				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
 			return
 		}
