@@ -34,7 +34,7 @@ func main() {
 		}
 	}()
 
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-quit
 	log.Println("Shutdown Server ...")
@@ -45,10 +45,9 @@ func main() {
 		log.Fatal("Server Shutdown:", err)
 	}
 	// catching ctx.Done(). timeout of 5 seconds.
-	select {
-	case <-ctx.Done():
-		log.Println("timeout of 5 seconds.")
-	}
+	log.Println("timeout of 5 seconds.")
+	<-ctx.Done()
+
 	log.Println("Server exiting")
 
 }
