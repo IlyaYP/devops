@@ -1,7 +1,6 @@
 package inmemory
 
 import (
-	"context"
 	"fmt"
 	"github.com/IlyaYP/devops/storage"
 	"strconv"
@@ -22,7 +21,7 @@ func NewStorage() *Storage {
 	return &s
 }
 
-func (s *Storage) PutMetric(ctx context.Context, MetricType, MetricName, MetricValue string) error {
+func (s *Storage) PutMetric(MetricType, MetricName, MetricValue string) error {
 	//fmt.Println("Put:", MetricType, MetricName, MetricValue)
 	// To write to the storage, take the write lock:
 	s.Lock()
@@ -57,7 +56,7 @@ func (s *Storage) PutMetric(ctx context.Context, MetricType, MetricName, MetricV
 	return nil
 }
 
-func (s *Storage) GetMetric(ctx context.Context, MetricType, MetricName string) (string, error) {
+func (s *Storage) GetMetric(MetricType, MetricName string) (string, error) {
 	// To read from the storage, take the read lock:
 	s.RLock()
 	defer s.RUnlock()
@@ -73,7 +72,7 @@ func (s *Storage) GetMetric(ctx context.Context, MetricType, MetricName string) 
 
 	return n, nil
 }
-func (s *Storage) ReadMetrics(ctx context.Context) map[string]map[string]string {
+func (s *Storage) ReadMetrics() map[string]map[string]string {
 	s.RLock()
 	defer s.RUnlock()
 	ret := make(map[string]map[string]string)

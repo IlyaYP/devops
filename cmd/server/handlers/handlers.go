@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"github.com/IlyaYP/devops/storage/inmemory"
 	"html/template"
 	"log"
@@ -12,7 +11,7 @@ import (
 
 func ReadHandler(st *inmemory.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		m := st.ReadMetrics(context.Background())
+		m := st.ReadMetrics()
 		w.WriteHeader(http.StatusOK)
 		var metrics []string
 		for k, v := range m {
@@ -60,7 +59,7 @@ func GetHandler(st *inmemory.Storage) http.HandlerFunc {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
 		//	chi.URLParam(r, "MName"), chi.URLParam(r, "MVal")); err != nil {
-		v, err := st.GetMetric(context.Background(), k[2], k[3])
+		v, err := st.GetMetric(k[2], k[3])
 		if err != nil {
 			if err.Error() == "wrong type" {
 				http.Error(w, err.Error(), http.StatusNotImplemented)
@@ -90,7 +89,7 @@ func UpdateHandler(st *inmemory.Storage) http.HandlerFunc {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
 		//	chi.URLParam(r, "MName"), chi.URLParam(r, "MVal")); err != nil {
-		if err := st.PutMetric(context.Background(), k[2], k[3], k[4]); err != nil {
+		if err := st.PutMetric(k[2], k[3], k[4]); err != nil {
 			if err.Error() == "wrong type" {
 				http.Error(w, err.Error(), http.StatusNotImplemented)
 			} else if err.Error() == "wrong value" {
