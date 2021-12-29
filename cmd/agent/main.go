@@ -55,22 +55,31 @@ package main
 
 import (
 	"github.com/IlyaYP/devops/internal"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
 func main() {
-	pollInterval := 2
-	reportInterval := 10
+	pollInterval := time.Duration(2) * time.Second
+	reportInterval := time.Duration(10) * time.Second
 	messages := make(chan string, 200)
 
 	go internal.NewMonitor(pollInterval, messages)
-
-	for {
-		select {
-		case str := <-messages:
-			internal.Send("http://localhost:8080/update" + str)
-		default:
-			time.Sleep(time.Duration(reportInterval) * time.Second)
+	go func() {
+		for {
+			select {
+			case str := <-messages:
+				internal.Send("http://localhost:8080/update" + str)
+			default:
+				time.Sleep(reportInterval)
+			}
 		}
-	}
+	}()
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	<-quit
+	log.Println("Shutdown Agent ...")
 }

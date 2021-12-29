@@ -2,40 +2,16 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
 	"github.com/IlyaYP/devops/storage/inmemory"
 	"github.com/go-chi/chi/v5"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
-
-func testStore(st *inmemory.Storage) {
-	println(st)
-
-	if err := st.PutMetric(context.Background(), "gauge", "aaa", "111.111"); err != nil {
-		println(err.Error())
-		return
-	}
-
-	if err := st.PutMetric(context.Background(), "counter", "bbb", "222"); err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	if err := st.PutMetric(context.Background(), "gauge", "ccc", "333.333"); err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
-	if v, err := st.GetMetric(context.Background(), "gauge", "ccc"); err != nil {
-		fmt.Println(err.Error())
-		return
-	} else {
-		fmt.Println(v)
-	}
-	ret := st.ReadMetrics(context.Background())
-	fmt.Println(ret)
-
-}
 
 func main() {
 	st := inmemory.NewStorage()
@@ -45,16 +21,34 @@ func main() {
 	r.Get("/", handlers.ReadHandler(st))
 	r.Get("/value/{MType}/{MName}", handlers.GetHandler(st))
 	r.Post("/update/{MType}/{MName}/{MVal}", handlers.UpdateHandler(st))
-	http.ListenAndServe(":8080", r)
 
-	//func(w http.ResponseWriter, r *http.Request) {
-	//	handlers.UpdateHandler(w, r, st)
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+	}
 
-	/*
-		// маршрутизация запросов обработчику
-		//http.HandleFunc("/", handlers.HelloWorld)
-		http.HandleFunc("/update/", handlers.UpdateHandler)
-		// запуск сервера с адресом localhost, порт 8080
-		log.Fatal(http.ListenAndServe(":8080", nil))
-	*/
+	go func() {
+		// service connections
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	<-quit
+	log.Println("Shutdown Server ...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	// catching ctx.Done(). timeout of 5 seconds.
+	select {
+	case <-ctx.Done():
+		log.Println("timeout of 5 seconds.")
+	}
+	log.Println("Server exiting")
+
 }

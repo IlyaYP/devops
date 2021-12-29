@@ -42,16 +42,15 @@ type runTimeMetrics struct {
 	PollCount counter
 }
 
-func NewMonitor(duration int, messages chan string) {
+func NewMonitor(duration time.Duration, messages chan string) {
 	var rtm runtime.MemStats
 	//var rm runTimeMetrics
 	PollCount := 0
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 
-	var interval = time.Duration(duration) * time.Second
 	for {
-		<-time.After(interval)
+		<-time.After(duration)
 		runtime.ReadMemStats(&rtm)
 
 		messages <- fmt.Sprintf("/gauge/Alloc/%v", rtm.Alloc)
