@@ -72,7 +72,7 @@ func main() {
 		for {
 			select {
 			case str := <-messages:
-				internal.Send("http://localhost:8080/update" + str)
+				go internal.Send("http://localhost:8080/update" + str)
 			default:
 				time.Sleep(reportInterval)
 			}
@@ -82,4 +82,5 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-quit
 	log.Println("Shutdown Agent ...")
+  os.Exit(0)
 }
