@@ -82,5 +82,5 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-quit
 	log.Println("Shutdown Agent ...")
-  os.Exit(0)
+	os.Exit(0)
 }
