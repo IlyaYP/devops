@@ -52,6 +52,7 @@ func ReadHandler(st *inmemory.Storage) http.HandlerFunc {
 	}
 }
 
+// GetHandler receiving requests like these, and responds value in body
 //GET http://localhost:8080/value/counter/testSetGet33
 //GET http://localhost:8080/value/counter/PollCount
 func GetHandler(st *inmemory.Storage) http.HandlerFunc {
@@ -81,6 +82,7 @@ func GetHandler(st *inmemory.Storage) http.HandlerFunc {
 	}
 }
 
+// UpdateHandler serves following requests:
 //http://<АДРЕС_СЕРВЕРА>/update/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>/<ЗНАЧЕНИЕ_МЕТРИКИ>
 //request URL: /update/counter/PollCount/2
 //request URL: /update/gauage/Alloc/201456

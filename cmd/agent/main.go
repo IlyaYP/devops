@@ -54,30 +54,36 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/IlyaYP/devops/internal"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func main() {
-	pollInterval := time.Duration(2) * time.Second
-	reportInterval := time.Duration(10) * time.Second
-	messages := make(chan string, 200)
+	//pollInterval := time.Duration(2) * time.Second
+	//reportInterval := time.Duration(10) * time.Second
+	//messages := make(chan string, 200)
+	//messages := make(chan internal.Metric, 200)
+	var buf bytes.Buffer
 
-	go internal.NewMonitor(pollInterval, messages)
-	go func() {
-		for {
-			select {
-			case str := <-messages:
-				go internal.Send("http://localhost:8080/update" + str)
-			default:
-				time.Sleep(reportInterval)
-			}
-		}
-	}()
+	getMetrics := internal.NewMonitor(&buf)
+	getMetrics()
+	getMetrics()
+	fmt.Println(buf.Len(), buf.String())
+	//go func() {
+	//	for {
+	//		select {
+	//		case str := <-messages:
+	//			go internal.Send("http://localhost:8080/update" + str)
+	//		default:
+	//			time.Sleep(reportInterval)
+	//		}
+	//	}
+	//}()
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-quit
