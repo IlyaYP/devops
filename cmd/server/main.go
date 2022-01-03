@@ -20,6 +20,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Get("/", handlers.ReadHandler(st))
 	r.Post("/update/", handlers.UpdateJSONHandler(st))
+	r.Post("/value/", handlers.GetJSONHandler(st))
 	r.Get("/value/{MType}/{MName}", handlers.GetHandler(st))
 	r.Post("/update/{MType}/{MName}/{MVal}", handlers.UpdateHandler(st))
 

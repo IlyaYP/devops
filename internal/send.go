@@ -2,7 +2,6 @@ package internal
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -25,7 +24,7 @@ func SendBuf(endpoint string, buf io.Reader) error {
 		log.Println(err)
 		return err
 	}
-	fmt.Println("Статус-код ", response.Status)
+	log.Println("Статус-код ", response.Status)
 	return nil
 }
 
