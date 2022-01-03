@@ -170,7 +170,7 @@ func GetJSONHandler(st *inmemory.Storage) http.HandlerFunc {
 		// while the array contains values
 		for jsonDecoder.More() {
 			var m internal.Metric
-			var MetricValue string
+
 			// decode an array value (Message)
 			err := jsonDecoder.Decode(&m)
 			if err != nil {
@@ -182,16 +182,6 @@ func GetJSONHandler(st *inmemory.Storage) http.HandlerFunc {
 				return
 			}
 
-			if err := st.PutMetric(m.MType, m.ID, MetricValue); err != nil {
-				if err.Error() == "wrong type" {
-					http.Error(w, err.Error(), http.StatusNotImplemented)
-				} else if err.Error() == "wrong value" {
-					http.Error(w, err.Error(), http.StatusBadRequest)
-				} else {
-					http.Error(w, "unknown error", http.StatusBadRequest)
-				}
-				return
-			}
 			v, err := st.GetMetric(m.MType, m.ID)
 			if err != nil {
 				if err.Error() == "wrong type" {
@@ -217,15 +207,6 @@ func GetJSONHandler(st *inmemory.Storage) http.HandlerFunc {
 				m.Delta = &delta
 			}
 			check(jsonEncoder.Encode(m))
-
 		}
-
-		w.Header().Set("content-type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
-		//if _, err := w.Write([]byte(v)); err != nil {
-		//	return
-		//}
-
 	}
 }
