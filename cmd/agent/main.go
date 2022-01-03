@@ -85,7 +85,6 @@ func main() {
 		case <-quit:
 			log.Println("Shutdown Agent ...")
 			os.Exit(0)
-
 		}
 	}
 }

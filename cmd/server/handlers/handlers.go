@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/IlyaYP/devops/internal"
 	"github.com/IlyaYP/devops/storage/inmemory"
 	"html/template"
-	"io"
 	"log"
 	"net/http"
 	"sort"
@@ -109,14 +110,43 @@ func UpdateHandler(st *inmemory.Storage) http.HandlerFunc {
 }
 func UpdateJSONHandler(st *inmemory.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		jsonDecoder := json.NewDecoder(r.Body)
+		// while the array contains values
+		for jsonDecoder.More() {
+			var m internal.Metric
+			var MetricValue string
+			// decode an array value (Message)
+			err := jsonDecoder.Decode(&m)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if m.MType == "gauge" {
+				MetricValue = fmt.Sprintf("%v", *m.Value)
+				//fmt.Printf("%v: %v %v\n", m.ID, m.MType, *m.Value)
+			} else if m.MType == "counter" {
+				MetricValue = fmt.Sprintf("%v", *m.Delta)
+				//fmt.Printf("%v: %v %v\n", m.ID, m.MType, *m.Delta)
+			} else {
+				http.Error(w, "wrong type", http.StatusNotImplemented)
+				return
+			}
+
+			if err := st.PutMetric(m.MType, m.ID, MetricValue); err != nil {
+				if err.Error() == "wrong type" {
+					http.Error(w, err.Error(), http.StatusNotImplemented)
+				} else if err.Error() == "wrong value" {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+				} else {
+					http.Error(w, "unknown error", http.StatusBadRequest)
+				}
+				return
+			}
+
+		}
+
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
-
-		b, err := io.ReadAll(r.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("%s", b)
-
 	}
 }

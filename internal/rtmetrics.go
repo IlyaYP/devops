@@ -59,7 +59,7 @@ func NewMonitor(buf io.Writer) func() {
 	r1 := rand.New(s1)
 	check := func(err error) {
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 	}
 
