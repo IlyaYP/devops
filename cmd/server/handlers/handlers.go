@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/IlyaYP/devops/storage/inmemory"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"sort"
@@ -103,5 +105,18 @@ func UpdateHandler(st *inmemory.Storage) http.HandlerFunc {
 		}
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
+	}
+}
+func UpdateJSONHandler(st *inmemory.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%s", b)
+
 	}
 }

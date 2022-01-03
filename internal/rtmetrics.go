@@ -64,7 +64,6 @@ func NewMonitor(buf io.Writer) func() {
 	}
 
 	return func() {
-		//<-time.After(duration)
 		runtime.ReadMemStats(&rtm)
 		PollCount++
 		rm.Alloc = float64(rtm.Alloc)
