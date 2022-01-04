@@ -206,6 +206,8 @@ func GetJSONHandler(st *inmemory.Storage) http.HandlerFunc {
 				}
 				m.Delta = &delta
 			}
+			w.Header().Set("content-type", "application/json")
+			w.WriteHeader(http.StatusOK)
 			check(jsonEncoder.Encode(m))
 		}
 	}
