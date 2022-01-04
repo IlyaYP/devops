@@ -20,12 +20,12 @@ func SendBuf(endpoint string, buf io.Reader) error {
 	//request.Header.Set("Content-Length", strconv.Itoa(len(data)))
 	//request.Header.Set("application-type", "text/plain")
 	response, err := client.Do(request)
-	defer response.Body.Close()
 	if err != nil {
 		log.Println(err)
 		return err
 	}
 	log.Println("Статус-код ", response.Status)
+	defer response.Body.Close()
 	return nil
 }
 
