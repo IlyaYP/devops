@@ -44,7 +44,7 @@ type runTimeMetrics struct {
 	RandomValue float64 //gauge
 	PollCount int64 //counter
 }
-type Metric struct {
+type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
 	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
@@ -97,34 +97,34 @@ func NewMonitor(buf io.Writer) func() {
 
 		//var buf bytes.Buffer
 		jsonEncoder := json.NewEncoder(buf)
-		check(jsonEncoder.Encode(Metric{ID: "Alloc", MType: "gauge", Value: &rm.Alloc}))
-		check(jsonEncoder.Encode(Metric{ID: "BuckHashSys", MType: "gauge", Value: &rm.BuckHashSys}))
-		check(jsonEncoder.Encode(Metric{ID: "Frees", MType: "gauge", Value: &rm.Frees}))
-		check(jsonEncoder.Encode(Metric{ID: "GCCPUFraction", MType: "gauge", Value: &rm.GCCPUFraction}))
-		check(jsonEncoder.Encode(Metric{ID: "GCSys", MType: "gauge", Value: &rm.GCSys}))
-		check(jsonEncoder.Encode(Metric{ID: "HeapAlloc", MType: "gauge", Value: &rm.HeapAlloc}))
-		check(jsonEncoder.Encode(Metric{ID: "HeapIdle", MType: "gauge", Value: &rm.HeapIdle}))
-		check(jsonEncoder.Encode(Metric{ID: "HeapInuse", MType: "gauge", Value: &rm.HeapInuse}))
-		check(jsonEncoder.Encode(Metric{ID: "HeapObjects", MType: "gauge", Value: &rm.HeapObjects}))
-		check(jsonEncoder.Encode(Metric{ID: "HeapReleased", MType: "gauge", Value: &rm.HeapReleased}))
-		check(jsonEncoder.Encode(Metric{ID: "HeapSys", MType: "gauge", Value: &rm.HeapSys}))
-		check(jsonEncoder.Encode(Metric{ID: "LastGC", MType: "gauge", Value: &rm.LastGC}))
-		check(jsonEncoder.Encode(Metric{ID: "Lookups", MType: "gauge", Value: &rm.Lookups}))
-		check(jsonEncoder.Encode(Metric{ID: "MCacheInuse", MType: "gauge", Value: &rm.MCacheInuse}))
-		check(jsonEncoder.Encode(Metric{ID: "MCacheSys", MType: "gauge", Value: &rm.MCacheSys}))
-		check(jsonEncoder.Encode(Metric{ID: "MSpanInuse", MType: "gauge", Value: &rm.MSpanInuse}))
-		check(jsonEncoder.Encode(Metric{ID: "MSpanSys", MType: "gauge", Value: &rm.MSpanSys}))
-		check(jsonEncoder.Encode(Metric{ID: "Mallocs", MType: "gauge", Value: &rm.Mallocs}))
-		check(jsonEncoder.Encode(Metric{ID: "NextGC", MType: "gauge", Value: &rm.NextGC}))
-		check(jsonEncoder.Encode(Metric{ID: "NumForcedGC", MType: "gauge", Value: &rm.NumForcedGC}))
-		check(jsonEncoder.Encode(Metric{ID: "NumGC", MType: "gauge", Value: &rm.NumGC}))
-		check(jsonEncoder.Encode(Metric{ID: "OtherSys", MType: "gauge", Value: &rm.OtherSys}))
-		check(jsonEncoder.Encode(Metric{ID: "PauseTotalNs", MType: "gauge", Value: &rm.PauseTotalNs}))
-		check(jsonEncoder.Encode(Metric{ID: "StackInuse", MType: "gauge", Value: &rm.StackInuse}))
-		check(jsonEncoder.Encode(Metric{ID: "StackSys", MType: "gauge", Value: &rm.StackSys}))
-		check(jsonEncoder.Encode(Metric{ID: "Sys", MType: "gauge", Value: &rm.Sys}))
-		check(jsonEncoder.Encode(Metric{ID: "RandomValue", MType: "gauge", Value: &rm.RandomValue}))
-		check(jsonEncoder.Encode(Metric{ID: "PollCount", MType: "counter", Delta: &rm.PollCount}))
+		check(jsonEncoder.Encode(Metrics{ID: "Alloc", MType: "gauge", Value: &rm.Alloc}))
+		check(jsonEncoder.Encode(Metrics{ID: "BuckHashSys", MType: "gauge", Value: &rm.BuckHashSys}))
+		check(jsonEncoder.Encode(Metrics{ID: "Frees", MType: "gauge", Value: &rm.Frees}))
+		check(jsonEncoder.Encode(Metrics{ID: "GCCPUFraction", MType: "gauge", Value: &rm.GCCPUFraction}))
+		check(jsonEncoder.Encode(Metrics{ID: "GCSys", MType: "gauge", Value: &rm.GCSys}))
+		check(jsonEncoder.Encode(Metrics{ID: "HeapAlloc", MType: "gauge", Value: &rm.HeapAlloc}))
+		check(jsonEncoder.Encode(Metrics{ID: "HeapIdle", MType: "gauge", Value: &rm.HeapIdle}))
+		check(jsonEncoder.Encode(Metrics{ID: "HeapInuse", MType: "gauge", Value: &rm.HeapInuse}))
+		check(jsonEncoder.Encode(Metrics{ID: "HeapObjects", MType: "gauge", Value: &rm.HeapObjects}))
+		check(jsonEncoder.Encode(Metrics{ID: "HeapReleased", MType: "gauge", Value: &rm.HeapReleased}))
+		check(jsonEncoder.Encode(Metrics{ID: "HeapSys", MType: "gauge", Value: &rm.HeapSys}))
+		check(jsonEncoder.Encode(Metrics{ID: "LastGC", MType: "gauge", Value: &rm.LastGC}))
+		check(jsonEncoder.Encode(Metrics{ID: "Lookups", MType: "gauge", Value: &rm.Lookups}))
+		check(jsonEncoder.Encode(Metrics{ID: "MCacheInuse", MType: "gauge", Value: &rm.MCacheInuse}))
+		check(jsonEncoder.Encode(Metrics{ID: "MCacheSys", MType: "gauge", Value: &rm.MCacheSys}))
+		check(jsonEncoder.Encode(Metrics{ID: "MSpanInuse", MType: "gauge", Value: &rm.MSpanInuse}))
+		check(jsonEncoder.Encode(Metrics{ID: "MSpanSys", MType: "gauge", Value: &rm.MSpanSys}))
+		check(jsonEncoder.Encode(Metrics{ID: "Mallocs", MType: "gauge", Value: &rm.Mallocs}))
+		check(jsonEncoder.Encode(Metrics{ID: "NextGC", MType: "gauge", Value: &rm.NextGC}))
+		check(jsonEncoder.Encode(Metrics{ID: "NumForcedGC", MType: "gauge", Value: &rm.NumForcedGC}))
+		check(jsonEncoder.Encode(Metrics{ID: "NumGC", MType: "gauge", Value: &rm.NumGC}))
+		check(jsonEncoder.Encode(Metrics{ID: "OtherSys", MType: "gauge", Value: &rm.OtherSys}))
+		check(jsonEncoder.Encode(Metrics{ID: "PauseTotalNs", MType: "gauge", Value: &rm.PauseTotalNs}))
+		check(jsonEncoder.Encode(Metrics{ID: "StackInuse", MType: "gauge", Value: &rm.StackInuse}))
+		check(jsonEncoder.Encode(Metrics{ID: "StackSys", MType: "gauge", Value: &rm.StackSys}))
+		check(jsonEncoder.Encode(Metrics{ID: "Sys", MType: "gauge", Value: &rm.Sys}))
+		check(jsonEncoder.Encode(Metrics{ID: "RandomValue", MType: "gauge", Value: &rm.RandomValue}))
+		check(jsonEncoder.Encode(Metrics{ID: "PollCount", MType: "counter", Delta: &rm.PollCount}))
 
 		//fmt.Println(buf.Len(), buf.String())
 	}

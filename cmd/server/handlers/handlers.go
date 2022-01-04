@@ -116,7 +116,7 @@ func UpdateJSONHandler(st *inmemory.Storage) http.HandlerFunc {
 		jsonDecoder := json.NewDecoder(r.Body)
 		// while the array contains values
 		for jsonDecoder.More() {
-			var m internal.Metric
+			var m internal.Metrics
 			var MetricValue string
 			// decode an array value (Message)
 			err := jsonDecoder.Decode(&m)
@@ -169,7 +169,7 @@ func GetJSONHandler(st *inmemory.Storage) http.HandlerFunc {
 
 		// while the array contains values
 		for jsonDecoder.More() {
-			var m internal.Metric
+			var m internal.Metrics
 
 			// decode an array value (Message)
 			err := jsonDecoder.Decode(&m)
