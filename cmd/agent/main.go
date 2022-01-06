@@ -3,16 +3,33 @@ package main
 import (
 	"bytes"
 	"github.com/IlyaYP/devops/internal"
+	"github.com/caarlos0/env/v6"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+  "fmt"
 )
 
+type config struct {
+	Address        string        `env:"ADDRESS" envDefault:"localhost:8080"`
+	ReportInterval time.Duration `env:"REPORT_INTERVAL" envDefault:"10s"`
+	PoolInterval   time.Duration `env:"POLL_INTERVAL" envDefault:"2s"`
+}
+
 func main() {
-	pollInterval := time.Duration(2) * time.Second
-	reportInterval := time.Duration(10) * time.Second
+	cfg := config{}
+	if err := env.Parse(&cfg); err != nil {
+		// log.Fatal(err)
+    fmt.Printf("%+v\n", err)
+	}
+	fmt.Printf("%+v\n", cfg)
+
+	pollInterval := cfg.PoolInterval //time.Duration(2) * time.Second
+	reportInterval := cfg.ReportInterval //time.Duration(10) * time.Second
+  endPoint := "http://" + cfg.Address + "/update/"
+	fmt.Printf("%+v %+v %+v\n", pollInterval, reportInterval, endPoint)
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	var buf bytes.Buffer
@@ -26,7 +43,7 @@ breakFor:
 		case <-poll:
 			getMetrics()
 		case <-report:
-			if err := internal.SendBuf("http://localhost:8080/update/", &buf); err != nil {
+			if err := internal.SendBuf(endPoint, &buf); err != nil {
 				log.Fatal(err)
 			}
 		case <-quit:
