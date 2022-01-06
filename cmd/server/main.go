@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
 	"github.com/IlyaYP/devops/storage/inmemory"
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
@@ -13,9 +14,17 @@ import (
 	"time"
 )
 
+type config struct {
+	Address string `env:"ADDRESS" envDefault:"localhost:8080"`
+}
+
 func main() {
 	st := inmemory.NewStorage()
 	//testStore(st)
+	cfg := config{}
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatal(err)
+	}
 
 	r := chi.NewRouter()
 	r.Get("/", handlers.ReadHandler(st))
@@ -25,7 +34,7 @@ func main() {
 	r.Post("/update/{MType}/{MName}/{MVal}", handlers.UpdateHandler(st))
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    cfg.Address, //":8080",
 		Handler: r,
 	}
 

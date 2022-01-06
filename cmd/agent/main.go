@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/IlyaYP/devops/internal"
 	"github.com/caarlos0/env/v6"
 	"log"
@@ -21,15 +20,12 @@ type config struct {
 func main() {
 	cfg := config{}
 	if err := env.Parse(&cfg); err != nil {
-		// log.Fatal(err)
-		fmt.Printf("%+v\n", err)
+		log.Fatal(err)
 	}
-	fmt.Printf("%+v\n", cfg)
 
 	pollInterval := cfg.PoolInterval     //time.Duration(2) * time.Second
 	reportInterval := cfg.ReportInterval //time.Duration(10) * time.Second
 	endPoint := "http://" + cfg.Address + "/update/"
-	fmt.Printf("%+v %+v %+v\n", pollInterval, reportInterval, endPoint)
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	var buf bytes.Buffer
