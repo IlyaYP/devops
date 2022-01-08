@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/IlyaYP/devops/internal"
-	"github.com/IlyaYP/devops/storage/inmemory"
+	"github.com/IlyaYP/devops/storage"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func ReadHandler(st *inmemory.Storage) http.HandlerFunc {
+func ReadHandler(st storage.MetricStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := st.ReadMetrics()
 		w.WriteHeader(http.StatusOK)
@@ -59,7 +59,7 @@ func ReadHandler(st *inmemory.Storage) http.HandlerFunc {
 // GetHandler receiving requests like these, and responds value in body
 //GET http://localhost:8080/value/counter/testSetGet33
 //GET http://localhost:8080/value/counter/PollCount
-func GetHandler(st *inmemory.Storage) http.HandlerFunc {
+func GetHandler(st storage.MetricStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
@@ -90,7 +90,7 @@ func GetHandler(st *inmemory.Storage) http.HandlerFunc {
 //http://<АДРЕС_СЕРВЕРА>/update/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>/<ЗНАЧЕНИЕ_МЕТРИКИ>
 //request URL: /update/counter/PollCount/2
 //request URL: /update/gauage/Alloc/201456
-func UpdateHandler(st *inmemory.Storage) http.HandlerFunc {
+func UpdateHandler(st storage.MetricStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
@@ -110,7 +110,7 @@ func UpdateHandler(st *inmemory.Storage) http.HandlerFunc {
 	}
 }
 
-func UpdateJSONHandler(st *inmemory.Storage) http.HandlerFunc {
+func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		jsonDecoder := json.NewDecoder(r.Body)
@@ -155,7 +155,7 @@ func UpdateJSONHandler(st *inmemory.Storage) http.HandlerFunc {
 
 // GetJSONHandler receiving requests in JSON body, and responds via JSON in body
 //POST http://localhost:8080/value/
-func GetJSONHandler(st *inmemory.Storage) http.HandlerFunc {
+func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//var buf []byte
 		check := func(err error) {

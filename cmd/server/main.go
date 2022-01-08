@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
-	"github.com/IlyaYP/devops/storage/inmemory"
+	"github.com/IlyaYP/devops/storage/infile"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"log"
@@ -15,16 +15,23 @@ import (
 )
 
 type config struct {
-	Address string `env:"ADDRESS" envDefault:"localhost:8080"`
+	Address       string        `env:"ADDRESS" envDefault:"localhost:8080"`
+	StoreInterval time.Duration `env:"STORE_INTERVAL" envDefault:"300s"`
+	StoreFile     string        `env:"STORE_FILE" envDefault:"/tmp/devops-metrics-db.json"`
+	Restore       bool          `env:"RESTORE" envDefault:"true"`
 }
 
 func main() {
-	st := inmemory.NewStorage()
-	//testStore(st)
+	//st := inmemory.NewMemStorage()
 	cfg := config{}
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
+	st, err := infile.NewFileStorage(cfg.StoreFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer st.Close()
 
 	r := chi.NewRouter()
 	r.Get("/", handlers.ReadHandler(st))
