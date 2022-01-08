@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/IlyaYP/devops/cmd/server/config"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
 	"github.com/IlyaYP/devops/storage/infile"
 	"github.com/caarlos0/env/v6"
@@ -14,20 +15,13 @@ import (
 	"time"
 )
 
-type config struct {
-	Address       string        `env:"ADDRESS" envDefault:"localhost:8080"`
-	StoreInterval time.Duration `env:"STORE_INTERVAL" envDefault:"300s"`
-	StoreFile     string        `env:"STORE_FILE" envDefault:"/tmp/devops-metrics-db.json"`
-	Restore       bool          `env:"RESTORE" envDefault:"true"`
-}
-
 func main() {
 	//st := inmemory.NewMemStorage()
-	cfg := config{}
+	cfg := config.Config{}
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
-	st, err := infile.NewFileStorage(cfg.StoreFile)
+	st, err := infile.NewFileStorage(&cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
