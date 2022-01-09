@@ -12,9 +12,9 @@ import (
 )
 
 type config struct {
-	Address        string        `env:"ADDRESS" envDefault:"localhost:8080"`
-	ReportInterval time.Duration `env:"REPORT_INTERVAL" envDefault:"10s"`
-	PoolInterval   time.Duration `env:"POLL_INTERVAL" envDefault:"2s"`
+	Address        string `env:"ADDRESS" envDefault:"localhost:8080"`
+	ReportInterval int    `env:"REPORT_INTERVAL" envDefault:"10"`
+	PoolInterval   int    `env:"POLL_INTERVAL" envDefault:"2"`
 }
 
 func main() {
@@ -23,8 +23,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pollInterval := cfg.PoolInterval     //time.Duration(2) * time.Second
-	reportInterval := cfg.ReportInterval //time.Duration(10) * time.Second
+	pollInterval := time.Duration(cfg.PoolInterval) * time.Second
+	reportInterval := time.Duration(cfg.ReportInterval) * time.Second
 	endPoint := "http://" + cfg.Address + "/update/"
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

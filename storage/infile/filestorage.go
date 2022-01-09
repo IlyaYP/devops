@@ -17,11 +17,12 @@ var _ storage.MetricStorage = (*FileStorage)(nil)
 
 type FileStorage struct {
 	inmemory.MemStorage
-	file      *os.File
-	encoder   *json.Encoder
-	decoder   *json.Decoder
-	cfg       *config.Config
-	lastWrite time.Time
+	file          *os.File
+	encoder       *json.Encoder
+	decoder       *json.Decoder
+	cfg           *config.Config
+	lastWrite     time.Time
+	StoreInterval time.Duration
 }
 
 func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
@@ -40,6 +41,7 @@ func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
 	s.file = file
 	s.encoder = json.NewEncoder(file)
 	s.decoder = json.NewDecoder(file)
+	s.StoreInterval = time.Duration(cfg.StoreInterval) * time.Second
 
 	if cfg.Restore {
 		if err := s.Restore(); err != nil {
@@ -60,7 +62,7 @@ func (c *FileStorage) PutMetric(MetricType, MetricName, MetricValue string) erro
 	}
 	now := time.Now()
 	//log.Println(c.cfg.StoreInterval, int(now.Sub(c.lastWrite).Seconds()))
-	if now.Sub(c.lastWrite) >= c.cfg.StoreInterval {
+	if now.Sub(c.lastWrite) >= c.StoreInterval {
 		if err := c.Save(); err != nil {
 			return err
 		}
