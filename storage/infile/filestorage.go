@@ -30,11 +30,12 @@ func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
 	s.Mtr["counter"] = make(map[string]string)
 	s.Mtr["gauge"] = make(map[string]string)
 
-	file, err := os.OpenFile(cfg.StoreFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+	//file, err := os.OpenFile(cfg.StoreFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	file, err := os.OpenFile(cfg.StoreFile, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return nil, err
 	}
-
+	s.file = file
 	s.encoder = json.NewEncoder(file)
 	s.decoder = json.NewDecoder(file)
 
@@ -90,6 +91,16 @@ func (c *FileStorage) Restore() error {
 }
 
 func (c *FileStorage) Save() error {
+
+	if _, err := c.file.Seek(0, 0); err != nil {
+		log.Println(err.Error())
+		log.Println("bla bla bla")
+	}
+	if err := c.file.Truncate(0); err != nil {
+		log.Println(err)
+		log.Println("bla bla bla")
+	}
+
 	m := c.MemStorage.ReadMetrics()
 	for k, v := range m {
 		for kk, vv := range v {
