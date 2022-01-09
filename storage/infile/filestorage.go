@@ -10,16 +10,18 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 var _ storage.MetricStorage = (*FileStorage)(nil)
 
 type FileStorage struct {
 	inmemory.MemStorage
-	file    *os.File
-	encoder *json.Encoder
-	decoder *json.Decoder
-	cfg     *config.Config
+	file      *os.File
+	encoder   *json.Encoder
+	decoder   *json.Decoder
+	cfg       *config.Config
+	lastWrite time.Time
 }
 
 func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
@@ -53,7 +55,20 @@ func (c *FileStorage) Close() error {
 }
 
 func (c *FileStorage) PutMetric(MetricType, MetricName, MetricValue string) error {
-	return c.MemStorage.PutMetric(MetricType, MetricName, MetricValue)
+	if err := c.MemStorage.PutMetric(MetricType, MetricName, MetricValue); err != nil {
+		return err
+	}
+	now := time.Now()
+	//log.Println(c.cfg.StoreInterval, int(now.Sub(c.lastWrite).Seconds()))
+	if now.Sub(c.lastWrite) >= c.cfg.StoreInterval {
+		if err := c.Save(); err != nil {
+			return err
+		}
+		c.lastWrite = now
+	}
+
+	log.Println(MetricType, MetricName, MetricValue)
+	return nil
 }
 
 func (c *FileStorage) GetMetric(MetricType, MetricName string) (string, error) {
@@ -94,11 +109,9 @@ func (c *FileStorage) Save() error {
 
 	if _, err := c.file.Seek(0, 0); err != nil {
 		log.Println(err.Error())
-		log.Println("bla bla bla")
 	}
 	if err := c.file.Truncate(0); err != nil {
 		log.Println(err)
-		log.Println("bla bla bla")
 	}
 
 	m := c.MemStorage.ReadMetrics()
