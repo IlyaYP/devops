@@ -4,7 +4,9 @@ import (
 	"context"
 	"github.com/IlyaYP/devops/cmd/server/config"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
+	"github.com/IlyaYP/devops/storage"
 	"github.com/IlyaYP/devops/storage/infile"
+	"github.com/IlyaYP/devops/storage/inmemory"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"log"
@@ -21,11 +23,17 @@ func main() {
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
-	st, err := infile.NewFileStorage(&cfg)
-	if err != nil {
-		log.Fatal(err)
+	var st storage.MetricStorage
+	if cfg.StoreFile == "" {
+		st = inmemory.NewMemStorage()
+	} else {
+		stt, err := infile.NewFileStorage(&cfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		st = stt
+		defer stt.Close()
 	}
-	defer st.Close()
 
 	r := chi.NewRouter()
 	r.Get("/", handlers.ReadHandler(st))
