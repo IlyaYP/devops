@@ -75,14 +75,6 @@ func (c *FileStorage) PutMetric(MetricType, MetricName, MetricValue string) erro
 	return nil
 }
 
-func (c *FileStorage) GetMetric(MetricType, MetricName string) (string, error) {
-	return c.MemStorage.GetMetric(MetricType, MetricName)
-}
-
-func (c *FileStorage) ReadMetrics() map[string]map[string]string {
-	return c.MemStorage.ReadMetrics()
-}
-
 func (c *FileStorage) Restore() error {
 	for c.decoder.More() {
 		var m internal.Metrics
