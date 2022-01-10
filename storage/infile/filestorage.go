@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -23,6 +24,7 @@ type FileStorage struct {
 	cfg           *config.Config
 	lastWrite     time.Time
 	StoreInterval time.Duration
+	fm            sync.RWMutex
 }
 
 func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
@@ -108,6 +110,8 @@ func (c *FileStorage) Restore() error {
 }
 
 func (c *FileStorage) Save() error {
+	c.fm.Lock()
+	defer c.fm.Unlock()
 
 	if _, err := c.file.Seek(0, 0); err != nil {
 		log.Println(err.Error())
