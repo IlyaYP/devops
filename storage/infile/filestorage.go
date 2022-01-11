@@ -25,6 +25,7 @@ type FileStorage struct {
 	lastWrite     time.Time
 	StoreInterval time.Duration
 	fm            sync.RWMutex
+	dirty         bool
 }
 
 func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
@@ -44,6 +45,7 @@ func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
 	s.encoder = json.NewEncoder(file)
 	s.decoder = json.NewDecoder(file)
 	s.StoreInterval = time.Duration(cfg.StoreInterval) * time.Second
+	s.dirty = false
 
 	if cfg.Restore {
 		if err := s.Restore(); err != nil {
@@ -62,17 +64,30 @@ func (c *FileStorage) PutMetric(MetricType, MetricName, MetricValue string) erro
 	if err := c.MemStorage.PutMetric(MetricType, MetricName, MetricValue); err != nil {
 		return err
 	}
-	now := time.Now()
-	//log.Println(c.cfg.StoreInterval, int(now.Sub(c.lastWrite).Seconds()))
-	if now.Sub(c.lastWrite) >= c.StoreInterval {
-		if err := c.Save(); err != nil {
-			return err
-		}
-		c.lastWrite = now
+	c.dirty = true
+	if time.Now().Sub(c.lastWrite) >= c.StoreInterval {
+		time.AfterFunc(time.Duration(1)*time.Second, c.DelayedSave)
+		c.lastWrite = time.Now().Add(time.Duration(1) * time.Second)
 	}
 
-	log.Println(MetricType, MetricName, MetricValue)
+	log.Println(MetricType, MetricName, MetricValue, c.dirty)
+	c.dirty = true
 	return nil
+}
+
+func (c *FileStorage) DelayedSave() {
+	if err := c.Save(); err != nil {
+		log.Println(err)
+		return
+	}
+	time.AfterFunc(c.StoreInterval, c.CheckState)
+	c.lastWrite = time.Now()
+}
+
+func (c *FileStorage) CheckState() {
+	if c.dirty {
+		c.DelayedSave()
+	}
 }
 
 func (c *FileStorage) Restore() error {
@@ -105,6 +120,7 @@ func (c *FileStorage) Save() error {
 	c.fm.Lock()
 	defer c.fm.Unlock()
 
+	log.Println("Writing data to", c.cfg.StoreFile)
 	if _, err := c.file.Seek(0, 0); err != nil {
 		log.Println(err.Error())
 	}
@@ -132,6 +148,6 @@ func (c *FileStorage) Save() error {
 			}
 		}
 	}
-
+	c.dirty = false
 	return nil
 }
