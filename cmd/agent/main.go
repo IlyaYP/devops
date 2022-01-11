@@ -57,7 +57,8 @@ breakFor:
 			getMetrics()
 		case <-report:
 			if err := internal.SendBuf(endPoint, &buf); err != nil {
-				log.Fatal(err)
+				log.Println(err)
+				log.Println("Ok, let's try again later")
 			}
 		case <-quit:
 			log.Println("Shutdown Agent ...")
