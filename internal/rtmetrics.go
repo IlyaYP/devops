@@ -16,6 +16,7 @@ type gauge float64
 type counter int64
 type runTimeMetrics struct {
 	Alloc,
+	TotalAlloc,
 	BuckHashSys,
 	Frees,
 	GCCPUFraction,
@@ -67,6 +68,7 @@ func NewMonitor(buf io.Writer) func() {
 		runtime.ReadMemStats(&rtm)
 		PollCount++
 		rm.Alloc = float64(rtm.Alloc)
+		rm.TotalAlloc = float64(rtm.TotalAlloc)
 		rm.BuckHashSys = float64(rtm.BuckHashSys)
 		rm.Frees = float64(rtm.Frees)
 		rm.GCCPUFraction = rtm.GCCPUFraction
