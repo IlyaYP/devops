@@ -177,11 +177,12 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			log.Println(m) // DEBUG:
 			if m.MType != "gauge" && m.MType != "counter" {
 				http.Error(w, "wrong type", http.StatusNotImplemented)
 				return
 			}
+
+			log.Println("ASK:", m.MType, m.ID) // DEBUG:
 
 			v, err := st.GetMetric(m.MType, m.ID)
 			if err != nil {
@@ -209,7 +210,7 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 			}
 			w.Header().Set("content-type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			log.Println(m) // DEBUG:
+			log.Println("RESP:", m.MType, m.ID, v) // DEBUG:
 			check(jsonEncoder.Encode(m))
 		}
 	}
