@@ -124,10 +124,10 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			if m.MType == "gauge" {
+			if m.MType == "gauge" && m.Value != nil {
 				MetricValue = fmt.Sprintf("%v", *m.Value)
 				//fmt.Printf("%v: %v %v\n", m.ID, m.MType, *m.Value)
-			} else if m.MType == "counter" {
+			} else if m.MType == "counter" && m.Delta != nil {
 				MetricValue = fmt.Sprintf("%v", *m.Delta)
 				//fmt.Printf("%v: %v %v\n", m.ID, m.MType, *m.Delta)
 			} else {
