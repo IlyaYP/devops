@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"github.com/IlyaYP/devops/cmd/server/config"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
 	"github.com/IlyaYP/devops/storage"
@@ -17,12 +18,23 @@ import (
 	"time"
 )
 
+var cfg config.Config
+
+func init() {
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
+	flag.IntVar(&cfg.StoreInterval, "i", 300, "Store interval in seconds")
+	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "Store file")
+	flag.BoolVar(&cfg.Restore, "r", true, "Restore data from file when start")
+}
+
 func main() {
-	//st := inmemory.NewMemStorage()
-	cfg := config.Config{}
+	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
+		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore)
+
 	var st storage.MetricStorage
 	if cfg.StoreFile == "" {
 		st = inmemory.NewMemStorage()

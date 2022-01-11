@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"github.com/IlyaYP/devops/internal"
 	"github.com/caarlos0/env/v6"
 	"log"
@@ -11,17 +12,33 @@ import (
 	"time"
 )
 
+//type config struct {
+//	Address        string `env:"ADDRESS" envDefault:"localhost:8080"`
+//	ReportInterval int    `env:"REPORT_INTERVAL" envDefault:"10"`
+//	PoolInterval   int    `env:"POLL_INTERVAL" envDefault:"2"`
+//}
+
 type config struct {
-	Address        string `env:"ADDRESS" envDefault:"localhost:8080"`
-	ReportInterval int    `env:"REPORT_INTERVAL" envDefault:"10"`
-	PoolInterval   int    `env:"POLL_INTERVAL" envDefault:"2"`
+	Address        string `env:"ADDRESS"`
+	ReportInterval int    `env:"REPORT_INTERVAL"`
+	PoolInterval   int    `env:"POLL_INTERVAL"`
+}
+
+var cfg config
+
+func init() {
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
+	flag.IntVar(&cfg.ReportInterval, "r", 10, "Report interval in seconds")
+	flag.IntVar(&cfg.PoolInterval, "p", 2, "Poll interval in seconds")
 }
 
 func main() {
-	cfg := config{}
+	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Agent start using args:ADDRESS", cfg.Address, "REPORT_INTERVAL",
+		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval)
 
 	pollInterval := time.Duration(cfg.PoolInterval) * time.Second
 	reportInterval := time.Duration(cfg.ReportInterval) * time.Second
