@@ -65,7 +65,8 @@ func (c *FileStorage) PutMetric(MetricType, MetricName, MetricValue string) erro
 		return err
 	}
 	c.dirty = true
-	if time.Now().Sub(c.lastWrite) >= c.StoreInterval {
+	//if time.Now().Sub(c.lastWrite) >= c.StoreInterval { // by autotest
+	if time.Since(c.lastWrite) >= c.StoreInterval {
 		time.AfterFunc(time.Duration(1)*time.Second, c.DelayedSave)
 		c.lastWrite = time.Now().Add(time.Duration(1) * time.Second)
 	}
