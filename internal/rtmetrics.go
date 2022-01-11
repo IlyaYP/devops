@@ -100,6 +100,7 @@ func NewMonitor(buf io.Writer) func() {
 		//var buf bytes.Buffer
 		jsonEncoder := json.NewEncoder(buf)
 		check(jsonEncoder.Encode(Metrics{ID: "Alloc", MType: "gauge", Value: &rm.Alloc}))
+		check(jsonEncoder.Encode(Metrics{ID: "TotalAlloc", MType: "gauge", Value: &rm.TotalAlloc}))
 		check(jsonEncoder.Encode(Metrics{ID: "BuckHashSys", MType: "gauge", Value: &rm.BuckHashSys}))
 		check(jsonEncoder.Encode(Metrics{ID: "Frees", MType: "gauge", Value: &rm.Frees}))
 		check(jsonEncoder.Encode(Metrics{ID: "GCCPUFraction", MType: "gauge", Value: &rm.GCCPUFraction}))
