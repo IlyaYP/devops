@@ -71,7 +71,7 @@ func (c *FileStorage) PutMetric(MetricType, MetricName, MetricValue string) erro
 		c.lastWrite = time.Now().Add(time.Duration(1) * time.Second)
 	}
 
-	log.Println(MetricType, MetricName, MetricValue, c.dirty)
+	//log.Println(MetricType, MetricName, MetricValue, c.dirty)
 	c.dirty = true
 	return nil
 }
