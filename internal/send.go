@@ -8,6 +8,19 @@ import (
 	"strconv"
 )
 
+func SendBufRetry(endpoint string, buf io.Reader) error {
+	var err error
+	for i := 0; i < 3; i++ {
+		if err = SendBuf(endpoint, buf); err != nil {
+			log.Println(err)
+			log.Println("once again")
+		} else {
+			return nil
+		}
+	}
+	return err
+}
+
 //SendBuf("http://localhost:8080/update/", &buf)
 func SendBuf(endpoint string, buf io.Reader) error {
 	client := &http.Client{}

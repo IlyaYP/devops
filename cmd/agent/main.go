@@ -56,7 +56,7 @@ breakFor:
 		case <-poll:
 			getMetrics()
 		case <-report:
-			if err := internal.SendBuf(endPoint, &buf); err != nil {
+			if err := internal.SendBufRetry(endPoint, &buf); err != nil {
 				log.Println(err)
 				log.Println("Ok, let's try again later")
 			}
