@@ -153,7 +153,9 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 			}
 
 		}
-
+		w.Header().Set("application-type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
 	}
 }
 
@@ -175,53 +177,53 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 		//w.WriteHeader(http.StatusOK)
 
 		// while the array contains values
-		//for jsonDecoder.More() {
-		var m internal.Metrics
+		for jsonDecoder.More() {
+			var m internal.Metrics
 
-		// decode an array value (Message)
-		err := jsonDecoder.Decode(&m)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			log.Println("GetJSONHandler:jsonDecoder.Decode:185", err)
-			return
-		}
-		if m.MType != "gauge" && m.MType != "counter" {
-			http.Error(w, "wrong type", http.StatusNotImplemented)
-			log.Println("GetJSONHandler:190", err)
-			return
-		}
-
-		//log.Println("ASK:", m.MType, m.ID) // DEBUG:
-
-		v, err := st.GetMetric(m.MType, m.ID)
-		if err != nil {
-			if err.Error() == "wrong type" {
-				http.Error(w, err.Error(), http.StatusNotImplemented)
-			} else if err.Error() == "no such metric" {
-				http.Error(w, err.Error(), http.StatusNotFound)
-			} else {
+			// decode an array value (Message)
+			err := jsonDecoder.Decode(&m)
+			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
+				log.Println("GetJSONHandler:jsonDecoder.Decode:185", err)
+				return
 			}
-			log.Println("GetJSONHandler:GetMetric:196", err)
-			return
-		}
-		if m.MType == "gauge" {
-			value, err := strconv.ParseFloat(v, 64)
+			if m.MType != "gauge" && m.MType != "counter" {
+				http.Error(w, "wrong type", http.StatusNotImplemented)
+				log.Println("GetJSONHandler:190", err)
+				return
+			}
+
+			//log.Println("ASK:", m.MType, m.ID) // DEBUG:
+
+			v, err := st.GetMetric(m.MType, m.ID)
 			if err != nil {
-				log.Println(err)
+				if err.Error() == "wrong type" {
+					http.Error(w, err.Error(), http.StatusNotImplemented)
+				} else if err.Error() == "no such metric" {
+					http.Error(w, err.Error(), http.StatusNotFound)
+				} else {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+				}
+				log.Println("GetJSONHandler:GetMetric:196", err)
+				return
 			}
-			m.Value = &value
-		} else if m.MType == "counter" {
-			delta, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				log.Println(err)
+			if m.MType == "gauge" {
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					log.Println(err)
+				}
+				m.Value = &value
+			} else if m.MType == "counter" {
+				delta, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					log.Println(err)
+				}
+				m.Delta = &delta
 			}
-			m.Delta = &delta
+			//w.Header().Set("content-type", "application/json")
+			//w.WriteHeader(http.StatusOK)
+			//log.Println("RESP:", m.MType, m.ID, v) // DEBUG:
+			check(jsonEncoder.Encode(m))
 		}
-		//w.Header().Set("content-type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		//log.Println("RESP:", m.MType, m.ID, v) // DEBUG:
-		check(jsonEncoder.Encode(m))
-		//}
 	}
 }
