@@ -167,6 +167,9 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 		jsonDecoder := json.NewDecoder(r.Body)
 		jsonEncoder := json.NewEncoder(w)
 
+		w.Header().Set("content-type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
 		// while the array contains values
 		for jsonDecoder.More() {
 			var m internal.Metrics
@@ -175,6 +178,7 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 			err := jsonDecoder.Decode(&m)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
+				log.Println(err)
 				return
 			}
 			if m.MType != "gauge" && m.MType != "counter" {
@@ -182,7 +186,7 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				return
 			}
 
-			log.Println("ASK:", m.MType, m.ID) // DEBUG:
+			//log.Println("ASK:", m.MType, m.ID) // DEBUG:
 
 			v, err := st.GetMetric(m.MType, m.ID)
 			if err != nil {
@@ -208,9 +212,9 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				}
 				m.Delta = &delta
 			}
-			w.Header().Set("content-type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			log.Println("RESP:", m.MType, m.ID, v) // DEBUG:
+			//w.Header().Set("content-type", "application/json")
+			//w.WriteHeader(http.StatusOK)
+			//log.Println("RESP:", m.MType, m.ID, v) // DEBUG:
 			check(jsonEncoder.Encode(m))
 		}
 	}

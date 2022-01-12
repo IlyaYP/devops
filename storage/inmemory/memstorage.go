@@ -3,6 +3,7 @@ package inmemory
 import (
 	"fmt"
 	"github.com/IlyaYP/devops/storage"
+	"log"
 	"strconv"
 	"sync"
 )
@@ -28,7 +29,7 @@ func (s *MemStorage) PutMetric(MetricType, MetricName, MetricValue string) error
 	defer s.Unlock()
 	t, ok := s.Mtr[MetricType]
 	if !ok {
-		fmt.Println("Error:", MetricType, MetricName, MetricValue)
+		log.Println("Error:", MetricType, MetricName, MetricValue)
 		return fmt.Errorf("wrong type")
 	}
 	if MetricType == "gauge" {
