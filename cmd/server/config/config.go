@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 // move defaults to flag Parse
 //type Config struct {
 //	Address       string `env:"ADDRESS" envDefault:"localhost:8080"`
@@ -8,9 +10,16 @@ package config
 //	Restore       bool   `env:"RESTORE" envDefault:"true"`
 //}
 
+//type Config struct {
+//	Address       string `env:"ADDRESS"`
+//	StoreInterval int    `env:"STORE_INTERVAL"`
+//	StoreFile     string `env:"STORE_FILE"`
+//	Restore       bool   `env:"RESTORE"`
+//}
+
 type Config struct {
-	Address       string `env:"ADDRESS"`
-	StoreInterval int    `env:"STORE_INTERVAL"`
-	StoreFile     string `env:"STORE_FILE"`
-	Restore       bool   `env:"RESTORE"`
+	Address       string        `env:"ADDRESS"`
+	StoreInterval time.Duration `env:"STORE_INTERVAL"`
+	StoreFile     string        `env:"STORE_FILE"`
+	Restore       bool          `env:"RESTORE"`
 }

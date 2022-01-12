@@ -44,7 +44,8 @@ func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
 	s.file = file
 	s.encoder = json.NewEncoder(file)
 	s.decoder = json.NewDecoder(file)
-	s.StoreInterval = time.Duration(cfg.StoreInterval) * time.Second
+	//s.StoreInterval = time.Duration(cfg.StoreInterval) * time.Second
+	s.StoreInterval = cfg.StoreInterval
 	s.dirty = false
 
 	if cfg.Restore {

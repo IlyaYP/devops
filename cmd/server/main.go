@@ -22,7 +22,8 @@ var cfg config.Config
 
 func init() {
 	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
-	flag.IntVar(&cfg.StoreInterval, "i", 300, "Store interval in seconds")
+	//flag.IntVar(&cfg.StoreInterval, "i", 300, "Store interval in seconds")
+	flag.DurationVar(&cfg.StoreInterval, "i", time.Duration(300)*time.Second, "Store interval in seconds")
 	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "Store file")
 	flag.BoolVar(&cfg.Restore, "r", true, "Restore data from file when start")
 }

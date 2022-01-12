@@ -18,18 +18,25 @@ import (
 //	PoolInterval   int    `env:"POLL_INTERVAL" envDefault:"2"`
 //}
 
+//type config struct {
+//	Address        string `env:"ADDRESS"`
+//	ReportInterval int    `env:"REPORT_INTERVAL"`
+//	PoolInterval   int    `env:"POLL_INTERVAL"`
+//}
 type config struct {
-	Address        string `env:"ADDRESS"`
-	ReportInterval int    `env:"REPORT_INTERVAL"`
-	PoolInterval   int    `env:"POLL_INTERVAL"`
+	Address        string        `env:"ADDRESS"`
+	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
+	PoolInterval   time.Duration `env:"POLL_INTERVAL"`
 }
 
 var cfg config
 
 func init() {
 	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
-	flag.IntVar(&cfg.ReportInterval, "r", 10, "Report interval in seconds")
-	flag.IntVar(&cfg.PoolInterval, "p", 2, "Poll interval in seconds")
+	//flag.IntVar(&cfg.ReportInterval, "r", 10, "Report interval in seconds")
+	//flag.IntVar(&cfg.PoolInterval, "p", 2, "Poll interval in seconds")
+	flag.DurationVar(&cfg.ReportInterval, "r", time.Duration(10)*time.Second, "Report interval in seconds")
+	flag.DurationVar(&cfg.PoolInterval, "p", time.Duration(2)*time.Second, "Poll interval in seconds")
 }
 
 func main() {
@@ -39,10 +46,11 @@ func main() {
 	}
 	log.Println("Agent start using args:ADDRESS", cfg.Address, "REPORT_INTERVAL",
 		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval)
-
-	pollInterval := time.Duration(cfg.PoolInterval) * time.Second
+	//pollInterval := time.Duration(cfg.PoolInterval) * time.Second
 	//reportInterval := time.Duration(cfg.ReportInterval) * time.Second
-	reportInterval := time.Duration(2) * time.Second
+	pollInterval := cfg.PoolInterval
+	reportInterval := cfg.ReportInterval
+
 	endPoint := "http://" + cfg.Address + "/update/"
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
