@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func SendBufRetry(endpoint string, buf io.Reader) error {
@@ -14,6 +15,7 @@ func SendBufRetry(endpoint string, buf io.Reader) error {
 		if err = SendBuf(endpoint, buf); err != nil {
 			log.Println(err)
 			log.Println("once again")
+			time.Sleep(time.Duration(1) * time.Second)
 		} else {
 			return nil
 		}
