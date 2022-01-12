@@ -122,6 +122,7 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 			err := jsonDecoder.Decode(&m)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
+				log.Println(err)
 				return
 			}
 			if m.MType == "gauge" && m.Value != nil {
@@ -149,7 +150,7 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 		}
 
 		w.Header().Set("content-type", "application/json")
-		w.WriteHeader(http.StatusOK)
+		//w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -168,7 +169,7 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 		jsonEncoder := json.NewEncoder(w)
 
 		w.Header().Set("content-type", "application/json")
-		w.WriteHeader(http.StatusOK)
+		//w.WriteHeader(http.StatusOK)
 
 		// while the array contains values
 		for jsonDecoder.More() {
