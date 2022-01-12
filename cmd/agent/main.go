@@ -1,60 +1,10 @@
-/*
-Задание для трека «Go в DevOps»
-Разработайте агент по сбору рантайм-метрик и их последующей отправке на сервер по протоколу HTTP. Разработку нужно вести с использованием шаблона.
-Агент должен собирать метрики двух типов:
-
-    gauge, тип float64
-    counter, тип int64
-
-В качестве источника метрик используйте пакет runtime.
-Нужно собирать следующие метрики:
-
-    Имя метрики: "Alloc", тип: gauge
-    Имя метрики: "BuckHashSys", тип: gauge
-    Имя метрики: "Frees", тип: gauge
-    Имя метрики: "GCCPUFraction", тип: gauge
-    Имя метрики: "GCSys", тип: gauge
-    Имя метрики: "HeapAlloc", тип: gauge
-    Имя метрики: "HeapIdle", тип: gauge
-    Имя метрики: "HeapInuse", тип: gauge
-    Имя метрики: "HeapObjects", тип: gauge
-    Имя метрики: "HeapReleased", тип: gauge
-    Имя метрики: "HeapSys", тип: gauge
-    Имя метрики: "LastGC", тип: gauge
-    Имя метрики: "Lookups", тип: gauge
-    Имя метрики: "MCacheInuse", тип: gauge
-    Имя метрики: "MCacheSys", тип: gauge
-    Имя метрики: "MSpanInuse", тип: gauge
-    Имя метрики: "MSpanSys", тип: gauge
-    Имя метрики: "Mallocs", тип: gauge
-    Имя метрики: "NextGC", тип: gauge
-    Имя метрики: "NumForcedGC", тип: gauge
-    Имя метрики: "NumGC", тип: gauge
-    Имя метрики: "OtherSys", тип: gauge
-    Имя метрики: "PauseTotalNs", тип: gauge
-    Имя метрики: "StackInuse", тип: gauge
-    Имя метрики: "StackSys", тип: gauge
-    Имя метрики: "Sys", тип: gauge
-
-К метрикам пакета runtime добавьте другие:
-
-    Имя метрики: "PollCount", тип: counter — счётчик, увеличивающийся на 1 при каждом обновлении метрики из пакета runtime (на каждый pollInterval — см. ниже).
-    Имя метрики: "RandomValue", тип: gauge — обновляемое рандомное значение.
-
-По умолчанию приложение должно обновлять метрики из пакета runtime с заданной частотой: pollInterval — 2 секунды.
-По умолчанию приложение должно отправлять метрики на сервер с заданной частотой: reportInterval — 10 секунд.
-Метрики нужно отправлять по протоколу HTTP, методом POST:
-
-    по умолчанию на адрес: 127.0.0.1, порт: 8080
-    в формате: http://<АДРЕС_СЕРВЕРА>/update/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>/<ЗНАЧЕНИЕ_МЕТРИКИ>
-    "application-type": "text/plain"
-
-Агент должен штатно завершаться по сигналам: syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT.
-*/
 package main
 
 import (
+	"bytes"
+	"flag"
 	"github.com/IlyaYP/devops/internal"
+	"github.com/caarlos0/env/v6"
 	"log"
 	"os"
 	"os/signal"
@@ -62,25 +12,66 @@ import (
 	"time"
 )
 
-func main() {
-	pollInterval := time.Duration(2) * time.Second
-	reportInterval := time.Duration(10) * time.Second
-	messages := make(chan string, 200)
+//type config struct {
+//	Address        string `env:"ADDRESS" envDefault:"localhost:8080"`
+//	ReportInterval int    `env:"REPORT_INTERVAL" envDefault:"10"`
+//	PoolInterval   int    `env:"POLL_INTERVAL" envDefault:"2"`
+//}
 
-	go internal.NewMonitor(pollInterval, messages)
-	go func() {
-		for {
-			select {
-			case str := <-messages:
-				go internal.Send("http://localhost:8080/update" + str)
-			default:
-				time.Sleep(reportInterval)
-			}
-		}
-	}()
+//type config struct {
+//	Address        string `env:"ADDRESS"`
+//	ReportInterval int    `env:"REPORT_INTERVAL"`
+//	PoolInterval   int    `env:"POLL_INTERVAL"`
+//}
+type config struct {
+	Address        string        `env:"ADDRESS"`
+	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
+	PoolInterval   time.Duration `env:"POLL_INTERVAL"`
+}
+
+var cfg config
+
+func init() {
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
+	//flag.IntVar(&cfg.ReportInterval, "r", 10, "Report interval in seconds")
+	//flag.IntVar(&cfg.PoolInterval, "p", 2, "Poll interval in seconds")
+	flag.DurationVar(&cfg.ReportInterval, "r", time.Duration(10)*time.Second, "Report interval in seconds")
+	flag.DurationVar(&cfg.PoolInterval, "p", time.Duration(2)*time.Second, "Poll interval in seconds")
+}
+
+func main() {
+	flag.Parse()
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Agent start using args:ADDRESS", cfg.Address, "REPORT_INTERVAL",
+		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval)
+	//pollInterval := time.Duration(cfg.PoolInterval) * time.Second
+	//reportInterval := time.Duration(cfg.ReportInterval) * time.Second
+	pollInterval := cfg.PoolInterval
+	reportInterval := cfg.ReportInterval
+
+	endPoint := "http://" + cfg.Address + "/update/"
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	<-quit
-	log.Println("Shutdown Agent ...")
-	os.Exit(0)
+	var buf bytes.Buffer
+
+	getMetrics := internal.NewMonitor(&buf)
+	poll := time.Tick(pollInterval)
+	report := time.Tick(reportInterval)
+breakFor:
+	for {
+		select {
+		case <-poll:
+			getMetrics()
+		case <-report:
+			if err := internal.SendBufRetry(endPoint, &buf); err != nil {
+				log.Println(err)
+				log.Println("Ok, let's try again later")
+			}
+		case <-quit:
+			log.Println("Shutdown Agent ...")
+			break breakFor
+		}
+	}
 }
