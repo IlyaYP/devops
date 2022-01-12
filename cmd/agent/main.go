@@ -41,7 +41,8 @@ func main() {
 		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval)
 
 	pollInterval := time.Duration(cfg.PoolInterval) * time.Second
-	reportInterval := time.Duration(cfg.ReportInterval) * time.Second
+	//reportInterval := time.Duration(cfg.ReportInterval) * time.Second
+	reportInterval := time.Duration(10) * time.Second
 	endPoint := "http://" + cfg.Address + "/update/"
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
