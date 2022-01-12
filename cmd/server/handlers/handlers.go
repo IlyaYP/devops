@@ -125,7 +125,7 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 			err := jsonDecoder.Decode(&m)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
-				log.Println(err)
+				log.Println("UpdateJSONHandler:jsonDecoder.Decode", err)
 				return
 			}
 			if m.MType == "gauge" && m.Value != nil {
@@ -136,7 +136,7 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				//fmt.Printf("%v: %v %v\n", m.ID, m.MType, *m.Delta)
 			} else {
 				http.Error(w, "wrong type", http.StatusNotImplemented)
-				log.Println(err)
+				log.Println("UpdateJSONHandler:139", err)
 				return
 			}
 
@@ -148,7 +148,7 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				} else {
 					http.Error(w, "unknown error", http.StatusBadRequest)
 				}
-				log.Println(err)
+				log.Println("UpdateJSONHandler:PutMetric 151", err)
 				return
 			}
 
@@ -182,12 +182,12 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 			err := jsonDecoder.Decode(&m)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
-				log.Println(err)
+				log.Println("GetJSONHandler:jsonDecoder.Decode:185", err)
 				return
 			}
 			if m.MType != "gauge" && m.MType != "counter" {
 				http.Error(w, "wrong type", http.StatusNotImplemented)
-				log.Println(err)
+				log.Println("GetJSONHandler:190", err)
 				return
 			}
 
@@ -202,7 +202,7 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				} else {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 				}
-				log.Println(err)
+				log.Println("GetJSONHandler:GetMetric:196", err)
 				return
 			}
 			if m.MType == "gauge" {
