@@ -80,6 +80,7 @@ func GetHandler(st storage.MetricStorage) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 
 		if _, err := w.Write([]byte(v)); err != nil {
+			log.Println("GetHandler Write body:", err)
 			return
 		}
 
@@ -103,6 +104,7 @@ func UpdateHandler(st storage.MetricStorage) http.HandlerFunc {
 			} else {
 				http.Error(w, "unknown error", http.StatusBadRequest)
 			}
+			log.Println("UpdateHandler:", err)
 			return
 		}
 		w.Header().Set("content-type", "application/json")
@@ -110,33 +112,29 @@ func UpdateHandler(st storage.MetricStorage) http.HandlerFunc {
 	}
 }
 
+// UpdateJSONHandler receiving updates in JSON in body
+//POST http://localhost:8080/update/
 func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		jsonDecoder := json.NewDecoder(r.Body)
-
-		w.Header().Set("content-type", "application/json")
-		//w.WriteHeader(http.StatusOK)
-		// while the array contains values
 		for jsonDecoder.More() {
 			var m internal.Metrics
 			var MetricValue string
-			// decode an array value (Message)
+
 			err := jsonDecoder.Decode(&m)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				log.Println("UpdateJSONHandler:jsonDecoder.Decode", err)
 				return
 			}
+
 			if m.MType == "gauge" && m.Value != nil {
 				MetricValue = fmt.Sprintf("%v", *m.Value)
-				//fmt.Printf("%v: %v %v\n", m.ID, m.MType, *m.Value)
 			} else if m.MType == "counter" && m.Delta != nil {
 				MetricValue = fmt.Sprintf("%v", *m.Delta)
-				//fmt.Printf("%v: %v %v\n", m.ID, m.MType, *m.Delta)
 			} else {
 				http.Error(w, "wrong type", http.StatusNotImplemented)
-				log.Println("UpdateJSONHandler:139", err)
+				log.Println("UpdateJSONHandler:", err)
 				return
 			}
 
@@ -148,14 +146,19 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				} else {
 					http.Error(w, "unknown error", http.StatusBadRequest)
 				}
-				log.Println("UpdateJSONHandler:PutMetric 151", err)
+				log.Println("UpdateJSONHandler:PutMetric ", err)
 				return
 			}
 
 		}
+
+		w.Header().Set("content-type", "application/json")
 		w.Header().Set("application-type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
+		if _, err := w.Write([]byte(`{"status":"ok"}`)); err != nil { // no need but doesn't pass test without it
+			log.Println("UpdateJSONHandler Write body:", err)
+			return
+		}
 	}
 }
 
@@ -163,24 +166,16 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 //POST http://localhost:8080/value/
 func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		//var buf []byte
-		check := func(err error) {
-			if err != nil {
-				log.Println(err)
-			}
-		}
-
 		jsonDecoder := json.NewDecoder(r.Body)
 		jsonEncoder := json.NewEncoder(w)
 
 		w.Header().Set("content-type", "application/json")
 		//w.WriteHeader(http.StatusOK)
 
-		// while the array contains values
+		// while the r.body  contains values
 		for jsonDecoder.More() {
 			var m internal.Metrics
 
-			// decode an array value (Message)
 			err := jsonDecoder.Decode(&m)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -193,8 +188,6 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				return
 			}
 
-			//log.Println("ASK:", m.MType, m.ID) // DEBUG:
-
 			v, err := st.GetMetric(m.MType, m.ID)
 			if err != nil {
 				if err.Error() == "wrong type" {
@@ -204,7 +197,7 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				} else {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 				}
-				log.Println("GetJSONHandler:GetMetric:196", err)
+				log.Println("GetJSONHandler:GetMetric:", err)
 				return
 			}
 			if m.MType == "gauge" {
@@ -223,7 +216,10 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 			//w.Header().Set("content-type", "application/json")
 			//w.WriteHeader(http.StatusOK)
 			//log.Println("RESP:", m.MType, m.ID, v) // DEBUG:
-			check(jsonEncoder.Encode(m))
+
+			if err := jsonEncoder.Encode(m); err != nil {
+				log.Println("GetJSONHandler write JSON body", err)
+			}
 		}
 	}
 }
