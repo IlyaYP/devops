@@ -1,15 +1,19 @@
 package handlers
 
 import (
-	"github.com/IlyaYP/devops/storage/inmemory"
+	"encoding/json"
+	"fmt"
+	"github.com/IlyaYP/devops/internal"
+	"github.com/IlyaYP/devops/storage"
 	"html/template"
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 )
 
-func ReadHandler(st *inmemory.Storage) http.HandlerFunc {
+func ReadHandler(st storage.MetricStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := st.ReadMetrics()
 		w.WriteHeader(http.StatusOK)
@@ -52,9 +56,10 @@ func ReadHandler(st *inmemory.Storage) http.HandlerFunc {
 	}
 }
 
+// GetHandler receiving requests like these, and responds value in body
 //GET http://localhost:8080/value/counter/testSetGet33
 //GET http://localhost:8080/value/counter/PollCount
-func GetHandler(st *inmemory.Storage) http.HandlerFunc {
+func GetHandler(st storage.MetricStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
@@ -75,16 +80,18 @@ func GetHandler(st *inmemory.Storage) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 
 		if _, err := w.Write([]byte(v)); err != nil {
+			log.Println("GetHandler Write body:", err)
 			return
 		}
 
 	}
 }
 
+// UpdateHandler serves following requests:
 //http://<АДРЕС_СЕРВЕРА>/update/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>/<ЗНАЧЕНИЕ_МЕТРИКИ>
 //request URL: /update/counter/PollCount/2
 //request URL: /update/gauage/Alloc/201456
-func UpdateHandler(st *inmemory.Storage) http.HandlerFunc {
+func UpdateHandler(st storage.MetricStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
@@ -97,9 +104,122 @@ func UpdateHandler(st *inmemory.Storage) http.HandlerFunc {
 			} else {
 				http.Error(w, "unknown error", http.StatusBadRequest)
 			}
+			log.Println("UpdateHandler:", err)
 			return
 		}
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// UpdateJSONHandler receiving updates in JSON in body
+//POST http://localhost:8080/update/
+func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		jsonDecoder := json.NewDecoder(r.Body)
+		for jsonDecoder.More() {
+			var m internal.Metrics
+			var MetricValue string
+
+			err := jsonDecoder.Decode(&m)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				log.Println("UpdateJSONHandler:jsonDecoder.Decode", err)
+				return
+			}
+
+			if m.MType == "gauge" && m.Value != nil {
+				MetricValue = fmt.Sprintf("%v", *m.Value)
+			} else if m.MType == "counter" && m.Delta != nil {
+				MetricValue = fmt.Sprintf("%v", *m.Delta)
+			} else {
+				http.Error(w, "wrong type", http.StatusNotImplemented)
+				log.Println("UpdateJSONHandler:", err)
+				return
+			}
+
+			if err := st.PutMetric(m.MType, m.ID, MetricValue); err != nil {
+				if err.Error() == "wrong type" {
+					http.Error(w, err.Error(), http.StatusNotImplemented)
+				} else if err.Error() == "wrong value" {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+				} else {
+					http.Error(w, "unknown error", http.StatusBadRequest)
+				}
+				log.Println("UpdateJSONHandler:PutMetric ", err)
+				return
+			}
+
+		}
+
+		w.Header().Set("content-type", "application/json")
+		w.Header().Set("application-type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte(`{"status":"ok"}`)); err != nil { // no need but doesn't pass test without it
+			log.Println("UpdateJSONHandler Write body:", err)
+			return
+		}
+	}
+}
+
+// GetJSONHandler receiving requests in JSON body, and responds via JSON in body
+//POST http://localhost:8080/value/
+func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		jsonDecoder := json.NewDecoder(r.Body)
+		jsonEncoder := json.NewEncoder(w)
+
+		w.Header().Set("content-type", "application/json")
+		//w.WriteHeader(http.StatusOK)
+
+		// while the r.body  contains values
+		for jsonDecoder.More() {
+			var m internal.Metrics
+
+			err := jsonDecoder.Decode(&m)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				log.Println("GetJSONHandler:jsonDecoder.Decode:185", err)
+				return
+			}
+			if m.MType != "gauge" && m.MType != "counter" {
+				http.Error(w, "wrong type", http.StatusNotImplemented)
+				log.Println("GetJSONHandler:190", err)
+				return
+			}
+
+			v, err := st.GetMetric(m.MType, m.ID)
+			if err != nil {
+				if err.Error() == "wrong type" {
+					http.Error(w, err.Error(), http.StatusNotImplemented)
+				} else if err.Error() == "no such metric" {
+					http.Error(w, err.Error(), http.StatusNotFound)
+				} else {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+				}
+				log.Println("GetJSONHandler:GetMetric:", err)
+				return
+			}
+			if m.MType == "gauge" {
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					log.Println(err)
+				}
+				m.Value = &value
+			} else if m.MType == "counter" {
+				delta, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					log.Println(err)
+				}
+				m.Delta = &delta
+			}
+			//w.Header().Set("content-type", "application/json")
+			//w.WriteHeader(http.StatusOK)
+			//log.Println("RESP:", m.MType, m.ID, v) // DEBUG:
+
+			if err := jsonEncoder.Encode(m); err != nil {
+				log.Println("GetJSONHandler write JSON body", err)
+			}
+		}
 	}
 }

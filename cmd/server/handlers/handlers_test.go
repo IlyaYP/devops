@@ -9,7 +9,7 @@ import (
 )
 
 func TestUpdateHandler(t *testing.T) {
-	st := inmemory.NewStorage()
+	st := inmemory.NewMemStorage()
 	// определяем структуру теста
 	type want struct {
 		code        int

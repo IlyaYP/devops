@@ -3,32 +3,33 @@ package inmemory
 import (
 	"fmt"
 	"github.com/IlyaYP/devops/storage"
+	"log"
 	"strconv"
 	"sync"
 )
 
-var _ storage.MetricStorage = (*Storage)(nil) // Q: Вот это для чего? я ещё не изучил (
+var _ storage.MetricStorage = (*MemStorage)(nil) // Q: Вот это для чего? я ещё не изучил (
 
-type Storage struct {
+type MemStorage struct {
 	sync.RWMutex
-	mtr map[string]map[string]string
+	Mtr map[string]map[string]string
 } //{mtr: make(map[string]map[string]string)}
 
-func NewStorage() *Storage {
-	s := Storage{mtr: make(map[string]map[string]string)}
-	s.mtr["counter"] = make(map[string]string)
-	s.mtr["gauge"] = make(map[string]string)
+func NewMemStorage() *MemStorage {
+	s := MemStorage{Mtr: make(map[string]map[string]string)}
+	s.Mtr["counter"] = make(map[string]string)
+	s.Mtr["gauge"] = make(map[string]string)
 	return &s
 }
 
-func (s *Storage) PutMetric(MetricType, MetricName, MetricValue string) error {
+func (s *MemStorage) PutMetric(MetricType, MetricName, MetricValue string) error {
 	//fmt.Println("Put:", MetricType, MetricName, MetricValue)
 	// To write to the storage, take the write lock:
 	s.Lock()
 	defer s.Unlock()
-	t, ok := s.mtr[MetricType]
+	t, ok := s.Mtr[MetricType]
 	if !ok {
-		fmt.Println("Error:", MetricType, MetricName, MetricValue)
+		log.Println("Error:", MetricType, MetricName, MetricValue)
 		return fmt.Errorf("wrong type")
 	}
 	if MetricType == "gauge" {
@@ -56,11 +57,11 @@ func (s *Storage) PutMetric(MetricType, MetricName, MetricValue string) error {
 	return nil
 }
 
-func (s *Storage) GetMetric(MetricType, MetricName string) (string, error) {
+func (s *MemStorage) GetMetric(MetricType, MetricName string) (string, error) {
 	// To read from the storage, take the read lock:
 	s.RLock()
 	defer s.RUnlock()
-	t, ok := s.mtr[MetricType]
+	t, ok := s.Mtr[MetricType]
 	if !ok {
 		return "", fmt.Errorf("wrong type")
 	}
@@ -72,11 +73,11 @@ func (s *Storage) GetMetric(MetricType, MetricName string) (string, error) {
 
 	return n, nil
 }
-func (s *Storage) ReadMetrics() map[string]map[string]string {
+func (s *MemStorage) ReadMetrics() map[string]map[string]string {
 	s.RLock()
 	defer s.RUnlock()
 	ret := make(map[string]map[string]string)
-	for k, v := range s.mtr {
+	for k, v := range s.Mtr {
 		ret[k] = make(map[string]string)
 		for kk, vv := range v {
 			ret[k][kk] = vv

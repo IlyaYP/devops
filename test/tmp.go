@@ -5,7 +5,7 @@ import (
 	"github.com/IlyaYP/devops/storage/inmemory"
 )
 
-func testStore(st *inmemory.Storage) {
+func testStore(st *inmemory.MemStorage) {
 	println(st)
 
 	if err := st.PutMetric("gauge", "aaa", "111.111"); err != nil {

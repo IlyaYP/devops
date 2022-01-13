@@ -2,8 +2,13 @@ package main
 
 import (
 	"context"
+	"flag"
+	"github.com/IlyaYP/devops/cmd/server/config"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
+	"github.com/IlyaYP/devops/storage"
+	"github.com/IlyaYP/devops/storage/infile"
 	"github.com/IlyaYP/devops/storage/inmemory"
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
@@ -13,17 +18,45 @@ import (
 	"time"
 )
 
+var cfg config.Config
+
+func init() {
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
+	//flag.IntVar(&cfg.StoreInterval, "i", 300, "Store interval in seconds")
+	flag.DurationVar(&cfg.StoreInterval, "i", time.Duration(300)*time.Second, "Store interval in seconds")
+	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "Store file")
+	flag.BoolVar(&cfg.Restore, "r", true, "Restore data from file when start")
+}
+
 func main() {
-	st := inmemory.NewStorage()
-	//testStore(st)
+	flag.Parse()
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
+		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore)
+
+	var st storage.MetricStorage
+	if cfg.StoreFile == "" {
+		st = inmemory.NewMemStorage()
+	} else {
+		stt, err := infile.NewFileStorage(&cfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		st = stt
+		defer stt.Close()
+	}
 
 	r := chi.NewRouter()
 	r.Get("/", handlers.ReadHandler(st))
+	r.Post("/update/", handlers.UpdateJSONHandler(st))
+	r.Post("/value/", handlers.GetJSONHandler(st))
 	r.Get("/value/{MType}/{MName}", handlers.GetHandler(st))
 	r.Post("/update/{MType}/{MName}/{MVal}", handlers.UpdateHandler(st))
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    cfg.Address, //":8080",
 		Handler: r,
 	}
 
