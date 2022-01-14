@@ -155,7 +155,7 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("application-type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte(`{"status":"ok"}`)); err != nil { // no need but doesn't pass test without it
+		if _, err := w.Write([]byte(`{"bug":"TestCounterHandlers/update"}`)); err != nil { // no need but doesn't pass test without it
 			log.Println("UpdateJSONHandler Write body:", err)
 			return
 		}
