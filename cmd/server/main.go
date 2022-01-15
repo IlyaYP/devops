@@ -49,11 +49,13 @@ func main() {
 	}
 
 	r := chi.NewRouter()
-	r.Get("/", handlers.ReadHandler(st))
-	r.Post("/update/", handlers.UpdateJSONHandler(st))
-	r.Post("/value/", handlers.GetJSONHandler(st))
-	r.Get("/value/{MType}/{MName}", handlers.GetHandler(st))
-	r.Post("/update/{MType}/{MName}/{MVal}", handlers.UpdateHandler(st))
+	h := new(handlers.Handlers)
+	h.St = st
+	r.Get("/", h.ReadHandler())
+	r.Post("/update/", h.UpdateJSONHandler())
+	r.Post("/value/", h.GetJSONHandler())
+	r.Get("/value/{MType}/{MName}", h.GetHandler())
+	r.Post("/update/{MType}/{MName}/{MVal}", h.UpdateHandler())
 
 	srv := &http.Server{
 		Addr:    cfg.Address, //":8080",

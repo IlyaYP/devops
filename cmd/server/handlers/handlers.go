@@ -13,9 +13,13 @@ import (
 	"strings"
 )
 
-func ReadHandler(st storage.MetricStorage) http.HandlerFunc {
+type Handlers struct {
+	St storage.MetricStorage
+}
+
+func (h Handlers) ReadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		m := st.ReadMetrics()
+		m := h.St.ReadMetrics()
 		w.WriteHeader(http.StatusOK)
 		var metrics []string
 		for k, v := range m {
@@ -59,12 +63,12 @@ func ReadHandler(st storage.MetricStorage) http.HandlerFunc {
 // GetHandler receiving requests like these, and responds value in body
 //GET http://localhost:8080/value/counter/testSetGet33
 //GET http://localhost:8080/value/counter/PollCount
-func GetHandler(st storage.MetricStorage) http.HandlerFunc {
+func (h Handlers) GetHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
 		//	chi.URLParam(r, "MName"), chi.URLParam(r, "MVal")); err != nil {
-		v, err := st.GetMetric(k[2], k[3])
+		v, err := h.St.GetMetric(k[2], k[3])
 		if err != nil {
 			if err.Error() == "wrong type" {
 				http.Error(w, err.Error(), http.StatusNotImplemented)
@@ -91,12 +95,12 @@ func GetHandler(st storage.MetricStorage) http.HandlerFunc {
 //http://<АДРЕС_СЕРВЕРА>/update/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>/<ЗНАЧЕНИЕ_МЕТРИКИ>
 //request URL: /update/counter/PollCount/2
 //request URL: /update/gauage/Alloc/201456
-func UpdateHandler(st storage.MetricStorage) http.HandlerFunc {
+func (h Handlers) UpdateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
 		//	chi.URLParam(r, "MName"), chi.URLParam(r, "MVal")); err != nil {
-		if err := st.PutMetric(k[2], k[3], k[4]); err != nil {
+		if err := h.St.PutMetric(k[2], k[3], k[4]); err != nil {
 			if err.Error() == "wrong type" {
 				http.Error(w, err.Error(), http.StatusNotImplemented)
 			} else if err.Error() == "wrong value" {
@@ -114,7 +118,7 @@ func UpdateHandler(st storage.MetricStorage) http.HandlerFunc {
 
 // UpdateJSONHandler receiving updates in JSON in body
 //POST http://localhost:8080/update/
-func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
+func (h Handlers) UpdateJSONHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		jsonDecoder := json.NewDecoder(r.Body)
 		for jsonDecoder.More() {
@@ -138,7 +142,7 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				return
 			}
 
-			if err := st.PutMetric(m.MType, m.ID, MetricValue); err != nil {
+			if err := h.St.PutMetric(m.MType, m.ID, MetricValue); err != nil {
 				if err.Error() == "wrong type" {
 					http.Error(w, err.Error(), http.StatusNotImplemented)
 				} else if err.Error() == "wrong value" {
@@ -164,7 +168,7 @@ func UpdateJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 
 // GetJSONHandler receiving requests in JSON body, and responds via JSON in body
 //POST http://localhost:8080/value/
-func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
+func (h Handlers) GetJSONHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		jsonDecoder := json.NewDecoder(r.Body)
 		jsonEncoder := json.NewEncoder(w)
@@ -188,7 +192,7 @@ func GetJSONHandler(st storage.MetricStorage) http.HandlerFunc {
 				return
 			}
 
-			v, err := st.GetMetric(m.MType, m.ID)
+			v, err := h.St.GetMetric(m.MType, m.ID)
 			if err != nil {
 				if err.Error() == "wrong type" {
 					http.Error(w, err.Error(), http.StatusNotImplemented)
