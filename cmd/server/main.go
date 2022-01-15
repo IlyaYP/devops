@@ -36,21 +36,22 @@ func main() {
 	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
 		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore)
 
-	var st storage.MetricStorage
+	var st storage.MetricStorage // Q: Это получается что? структура указатель или что?
 	if cfg.StoreFile == "" {
-		st = inmemory.NewMemStorage()
+		st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
 	} else {
-		stt, err := infile.NewFileStorage(&cfg)
+		stt, err := infile.NewFileStorage(&cfg) // Q: и тут
 		if err != nil {
 			log.Fatal(err)
 		}
-		st = stt
+		st = stt // Q: Что получается я созадю копию структуры или указателья???
 		defer stt.Close()
 	}
 
 	r := chi.NewRouter()
 	h := new(handlers.Handlers)
-	h.St = st
+	h.St = st // Q: Тот же вопрос. Опять содается копия? (я бы не хотел полодить копии,
+	// а иметь в памяти один экземпляр и передовать указатель на него)
 	r.Get("/", h.ReadHandler())
 	r.Post("/update/", h.UpdateJSONHandler())
 	r.Post("/value/", h.GetJSONHandler())

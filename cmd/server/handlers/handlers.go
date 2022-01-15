@@ -14,7 +14,7 @@ import (
 )
 
 type Handlers struct {
-	St storage.MetricStorage
+	St storage.MetricStorage // Q: почему сюда не могу поставить указатель? не создаю ли я копию?
 }
 
 func (h Handlers) ReadHandler() http.HandlerFunc {
