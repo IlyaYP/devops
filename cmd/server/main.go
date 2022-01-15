@@ -20,13 +20,6 @@ import (
 
 var cfg config.Config
 
-func init() {
-	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
-	flag.DurationVar(&cfg.StoreInterval, "i", time.Duration(300)*time.Second, "Store interval in seconds")
-	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "Store file")
-	flag.BoolVar(&cfg.Restore, "r", true, "Restore data from file when start")
-}
-
 func main() {
 	if err := run(); err != nil {
 		os.Exit(1)
@@ -34,6 +27,10 @@ func main() {
 }
 
 func run() error {
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
+	flag.DurationVar(&cfg.StoreInterval, "i", time.Duration(300)*time.Second, "Store interval in seconds")
+	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "Store file")
+	flag.BoolVar(&cfg.Restore, "r", true, "Restore data from file when start")
 	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
 		log.Println(err)

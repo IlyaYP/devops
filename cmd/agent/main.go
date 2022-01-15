@@ -31,23 +31,23 @@ type config struct {
 
 var cfg config
 
-func init() {
-	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
-	//flag.IntVar(&cfg.ReportInterval, "r", 10, "Report interval in seconds")
-	//flag.IntVar(&cfg.PoolInterval, "p", 2, "Poll interval in seconds")
-	flag.DurationVar(&cfg.ReportInterval, "r", time.Duration(10)*time.Second, "Report interval in seconds")
-	flag.DurationVar(&cfg.PoolInterval, "p", time.Duration(2)*time.Second, "Poll interval in seconds")
+func main() {
+	if err := run(); err != nil {
+		os.Exit(1)
+	}
 }
 
-func main() {
+func run() error {
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
+	flag.DurationVar(&cfg.ReportInterval, "r", time.Duration(10)*time.Second, "Report interval in seconds")
+	flag.DurationVar(&cfg.PoolInterval, "p", time.Duration(2)*time.Second, "Poll interval in seconds")
 	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return err
 	}
 	log.Println("Agent start using args:ADDRESS", cfg.Address, "REPORT_INTERVAL",
 		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval)
-	//pollInterval := time.Duration(cfg.PoolInterval) * time.Second
-	//reportInterval := time.Duration(cfg.ReportInterval) * time.Second
 	pollInterval := cfg.PoolInterval
 	reportInterval := cfg.ReportInterval
 
@@ -74,4 +74,5 @@ breakFor:
 			break breakFor
 		}
 	}
+	return nil
 }
