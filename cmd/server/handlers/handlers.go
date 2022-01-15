@@ -17,7 +17,7 @@ type Handlers struct {
 	St storage.MetricStorage // Q: почему сюда не могу поставить указатель? не создаю ли я копию?
 }
 
-func (h Handlers) ReadHandler() http.HandlerFunc {
+func (h *Handlers) ReadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := h.St.ReadMetrics()
 		w.WriteHeader(http.StatusOK)
@@ -63,7 +63,7 @@ func (h Handlers) ReadHandler() http.HandlerFunc {
 // GetHandler receiving requests like these, and responds value in body
 //GET http://localhost:8080/value/counter/testSetGet33
 //GET http://localhost:8080/value/counter/PollCount
-func (h Handlers) GetHandler() http.HandlerFunc {
+func (h *Handlers) GetHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
@@ -95,7 +95,7 @@ func (h Handlers) GetHandler() http.HandlerFunc {
 //http://<АДРЕС_СЕРВЕРА>/update/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>/<ЗНАЧЕНИЕ_МЕТРИКИ>
 //request URL: /update/counter/PollCount/2
 //request URL: /update/gauage/Alloc/201456
-func (h Handlers) UpdateHandler() http.HandlerFunc {
+func (h *Handlers) UpdateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
@@ -118,7 +118,7 @@ func (h Handlers) UpdateHandler() http.HandlerFunc {
 
 // UpdateJSONHandler receiving updates in JSON in body
 //POST http://localhost:8080/update/
-func (h Handlers) UpdateJSONHandler() http.HandlerFunc {
+func (h *Handlers) UpdateJSONHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		jsonDecoder := json.NewDecoder(r.Body)
 		for jsonDecoder.More() {
@@ -168,7 +168,7 @@ func (h Handlers) UpdateJSONHandler() http.HandlerFunc {
 
 // GetJSONHandler receiving requests in JSON body, and responds via JSON in body
 //POST http://localhost:8080/value/
-func (h Handlers) GetJSONHandler() http.HandlerFunc {
+func (h *Handlers) GetJSONHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		jsonDecoder := json.NewDecoder(r.Body)
 		jsonEncoder := json.NewEncoder(w)
