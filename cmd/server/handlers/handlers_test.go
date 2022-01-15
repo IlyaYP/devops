@@ -45,7 +45,9 @@ func TestUpdateHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			// определяем хендлер
-			h := http.HandlerFunc(UpdateHandler(st))
+			hd := new(Handlers)
+			hd.St = st
+			h := http.HandlerFunc(hd.UpdateHandler())
 
 			// запускаем сервер
 			h.ServeHTTP(w, request)
