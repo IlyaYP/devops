@@ -2,13 +2,11 @@ package main
 
 import (
 	"context"
-	"flag"
 	"github.com/IlyaYP/devops/cmd/server/config"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
 	"github.com/IlyaYP/devops/storage"
 	"github.com/IlyaYP/devops/storage/infile"
 	"github.com/IlyaYP/devops/storage/inmemory"
-	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
@@ -18,7 +16,7 @@ import (
 	"time"
 )
 
-var cfg config.Config
+//var cfg config.Config
 
 func main() {
 	if err := run(); err != nil {
@@ -27,15 +25,13 @@ func main() {
 }
 
 func run() error {
-	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
-	flag.DurationVar(&cfg.StoreInterval, "i", time.Duration(300)*time.Second, "Store interval in seconds")
-	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "Store file")
-	flag.BoolVar(&cfg.Restore, "r", true, "Restore data from file when start")
-	flag.Parse()
-	if err := env.Parse(&cfg); err != nil {
+
+	cfg, err := config.LoadConfig()
+	if err != nil {
 		log.Println(err)
 		return err
 	}
+
 	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
 		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore)
 
@@ -43,7 +39,7 @@ func run() error {
 	if cfg.StoreFile == "" {
 		st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
 	} else {
-		stt, err := infile.NewFileStorage(&cfg) // Q: и тут
+		stt, err := infile.NewFileStorage(cfg) // Q: и тут
 		if err != nil {
 			log.Println(err)
 			return err
