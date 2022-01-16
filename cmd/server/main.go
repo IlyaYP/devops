@@ -16,8 +16,6 @@ import (
 	"time"
 )
 
-//var cfg config.Config
-
 func main() {
 	if err := run(); err != nil {
 		os.Exit(1)
@@ -25,7 +23,6 @@ func main() {
 }
 
 func run() error {
-
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Println(err)
@@ -35,6 +32,7 @@ func run() error {
 	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
 		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore)
 
+	// Storage Q: Решил пока оставить тут, но возможно лучше перенести в config?
 	var st storage.MetricStorage // Q: Это получается что? структура указатель или что?
 	if cfg.StoreFile == "" {
 		st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
@@ -48,10 +46,13 @@ func run() error {
 		defer stt.Close()
 	}
 
-	r := chi.NewRouter()
+	// Handlers
 	h := new(handlers.Handlers)
 	h.St = st // Q: Тот же вопрос. Опять содается копия? (я бы не хотел полодить копии,
 	// а иметь в памяти один экземпляр и передовать указатель на него)
+
+	// Router
+	r := chi.NewRouter()
 	r.Get("/", h.ReadHandler())
 	r.Post("/update/", h.UpdateJSONHandler())
 	r.Post("/value/", h.GetJSONHandler())
@@ -81,8 +82,9 @@ func run() error {
 		log.Println("Server Shutdown:", err)
 		return err
 	}
-	// catching ctx.Done(). timeout of 5 seconds.
+
 	log.Println("timeout of 5 seconds.")
+	// catching ctx.Done(). timeout of 5 seconds.
 	<-ctx.Done()
 
 	log.Println("Server exiting")
