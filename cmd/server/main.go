@@ -2,13 +2,11 @@ package main
 
 import (
 	"context"
-	"flag"
 	"github.com/IlyaYP/devops/cmd/server/config"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
 	"github.com/IlyaYP/devops/storage"
 	"github.com/IlyaYP/devops/storage/infile"
 	"github.com/IlyaYP/devops/storage/inmemory"
-	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
@@ -18,8 +16,6 @@ import (
 	"time"
 )
 
-var cfg config.Config
-
 func main() {
 	if err := run(); err != nil {
 		os.Exit(1)
@@ -27,23 +23,21 @@ func main() {
 }
 
 func run() error {
-	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
-	flag.DurationVar(&cfg.StoreInterval, "i", time.Duration(300)*time.Second, "Store interval in seconds")
-	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "Store file")
-	flag.BoolVar(&cfg.Restore, "r", true, "Restore data from file when start")
-	flag.Parse()
-	if err := env.Parse(&cfg); err != nil {
+	cfg, err := config.LoadConfig()
+	if err != nil {
 		log.Println(err)
 		return err
 	}
+
 	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
 		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore)
 
+	// Storage Q: Решил пока оставить тут, но возможно лучше перенести в config?
 	var st storage.MetricStorage // Q: Это получается что? структура указатель или что?
 	if cfg.StoreFile == "" {
 		st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
 	} else {
-		stt, err := infile.NewFileStorage(&cfg) // Q: и тут
+		stt, err := infile.NewFileStorage(cfg) // Q: и тут
 		if err != nil {
 			log.Println(err)
 			return err
@@ -52,10 +46,13 @@ func run() error {
 		defer stt.Close()
 	}
 
-	r := chi.NewRouter()
+	// Handlers
 	h := new(handlers.Handlers)
 	h.St = st // Q: Тот же вопрос. Опять содается копия? (я бы не хотел полодить копии,
 	// а иметь в памяти один экземпляр и передовать указатель на него)
+
+	// Router
+	r := chi.NewRouter()
 	r.Get("/", h.ReadHandler())
 	r.Post("/update/", h.UpdateJSONHandler())
 	r.Post("/value/", h.GetJSONHandler())
@@ -85,8 +82,9 @@ func run() error {
 		log.Println("Server Shutdown:", err)
 		return err
 	}
-	// catching ctx.Done(). timeout of 5 seconds.
+
 	log.Println("timeout of 5 seconds.")
+	// catching ctx.Done(). timeout of 5 seconds.
 	<-ctx.Done()
 
 	log.Println("Server exiting")
