@@ -20,6 +20,7 @@ type Handlers struct {
 func (h *Handlers) ReadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := h.St.ReadMetrics()
+		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
 		//w.Header().Set("Content-Encoding", "gzip")
 		var metrics []string

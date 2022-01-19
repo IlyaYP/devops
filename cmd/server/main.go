@@ -58,6 +58,10 @@ func run() error {
 	compressor := middleware.NewCompressor(flate.DefaultCompression)
 	r.Use(compressor.Handler)
 	r.Get("/", h.ReadHandler())
+	//r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	//	//w.Header().Set("Content-Type", "text/plain")
+	//	w.Write([]byte("hello world"))
+	//})
 	r.Post("/update/", h.UpdateJSONHandler())
 	r.Post("/value/", h.GetJSONHandler())
 	r.Get("/value/{MType}/{MName}", h.GetHandler())
