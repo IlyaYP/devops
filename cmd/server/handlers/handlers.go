@@ -21,6 +21,7 @@ func (h *Handlers) ReadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := h.St.ReadMetrics()
 		w.WriteHeader(http.StatusOK)
+		//w.Header().Set("Content-Encoding", "gzip")
 		var metrics []string
 		for k, v := range m {
 			for kk, vv := range v {

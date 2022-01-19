@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/flate"
 	"context"
 	"github.com/IlyaYP/devops/cmd/server/config"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
@@ -8,6 +9,7 @@ import (
 	"github.com/IlyaYP/devops/storage/infile"
 	"github.com/IlyaYP/devops/storage/inmemory"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"log"
 	"net/http"
 	"os"
@@ -53,6 +55,8 @@ func run() error {
 
 	// Router
 	r := chi.NewRouter()
+	compressor := middleware.NewCompressor(flate.DefaultCompression)
+	r.Use(compressor.Handler)
 	r.Get("/", h.ReadHandler())
 	r.Post("/update/", h.UpdateJSONHandler())
 	r.Post("/value/", h.GetJSONHandler())
