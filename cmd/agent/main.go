@@ -25,7 +25,7 @@ func run() error {
 	}
 
 	log.Println("Agent start using args:ADDRESS", cfg.Address, "REPORT_INTERVAL",
-		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval)
+		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval, "KEY", cfg.Key)
 
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

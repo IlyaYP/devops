@@ -32,6 +32,7 @@ type Config struct {
 	StoreInterval time.Duration `env:"STORE_INTERVAL"`
 	StoreFile     string        `env:"STORE_FILE"`
 	Restore       bool          `env:"RESTORE"`
+	Key           string        `env:"KEY"`
 }
 
 // Validate performs a basic validation.
@@ -56,6 +57,7 @@ func LoadConfig() (*Config, error) {
 	flag.DurationVar(&cfg.StoreInterval, "i", time.Duration(300)*time.Second, "Store interval in seconds")
 	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "Store file")
 	flag.BoolVar(&cfg.Restore, "r", true, "Restore data from file when start")
+	flag.StringVar(&cfg.Key, "k", "", "Key")
 	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
 		log.Println(err)

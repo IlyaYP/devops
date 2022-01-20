@@ -23,6 +23,7 @@ type Config struct {
 	Address        string        `env:"ADDRESS"`
 	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
 	PoolInterval   time.Duration `env:"POLL_INTERVAL"`
+	Key            string        `env:"KEY"`
 	EndPoint       string
 }
 
@@ -31,6 +32,7 @@ func LoadConfig() (*Config, error) {
 	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
 	flag.DurationVar(&cfg.ReportInterval, "r", time.Duration(10)*time.Second, "Report interval in seconds")
 	flag.DurationVar(&cfg.PoolInterval, "p", time.Duration(2)*time.Second, "Poll interval in seconds")
+	flag.StringVar(&cfg.Key, "k", "", "Key")
 	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
 		log.Println(err)

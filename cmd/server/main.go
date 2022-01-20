@@ -32,7 +32,7 @@ func run() error {
 	}
 
 	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
-		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore)
+		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore, "KEY", cfg.Key)
 
 	// Storage Q: Решил пока оставить тут, но возможно лучше перенести в config?
 	var st storage.MetricStorage // Q: Это получается что? структура указатель или что?
