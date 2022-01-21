@@ -31,7 +31,7 @@ func run() error {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	var buf bytes.Buffer
 
-	getMetrics := internal.NewMonitor(&buf)
+	getMetrics := internal.NewMonitor(&buf, cfg.Key)
 	poll := time.Tick(cfg.PoolInterval)
 	report := time.Tick(cfg.ReportInterval)
 breakFor:
