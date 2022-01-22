@@ -233,12 +233,19 @@ func (h *Handlers) GetJSONHandler() http.HandlerFunc {
 					log.Println(err)
 				}
 				m.Value = &value
+				if h.Key != "" {
+					m.Hash = internal.Hash(fmt.Sprintf("%s:gauge:%f", m.ID, *m.Value), h.Key)
+				}
 			} else if m.MType == "counter" {
 				delta, err := strconv.ParseInt(v, 10, 64)
 				if err != nil {
 					log.Println(err)
 				}
 				m.Delta = &delta
+				if h.Key != "" {
+					m.Hash = internal.Hash(fmt.Sprintf("%s:counter:%d", m.ID, *m.Delta), h.Key)
+				}
+
 			}
 			//w.Header().Set("content-type", "application/json")
 			//w.WriteHeader(http.StatusOK)
