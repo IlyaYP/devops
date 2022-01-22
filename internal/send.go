@@ -39,8 +39,8 @@ func SendBuf(endpoint string, buf io.Reader) error {
 		log.Println(err)
 		return err
 	}
-	log.Println("Статус-код ", response.Status)
 	defer response.Body.Close()
+	log.Println("Статус-код ", response.Status)
 	return nil
 }
 

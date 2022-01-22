@@ -73,6 +73,7 @@ func (s *MemStorage) GetMetric(MetricType, MetricName string) (string, error) {
 
 	return n, nil
 }
+
 func (s *MemStorage) ReadMetrics() map[string]map[string]string {
 	s.RLock()
 	defer s.RUnlock()

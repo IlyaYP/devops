@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"crypto/hmac"
 	"encoding/json"
 	"fmt"
 	"github.com/IlyaYP/devops/internal"
@@ -14,7 +15,8 @@ import (
 )
 
 type Handlers struct {
-	St storage.MetricStorage // Q: почему сюда не могу поставить указатель? не создаю ли я копию?
+	St  storage.MetricStorage // Q: почему сюда не могу поставить указатель? не создаю ли я копию?
+	Key string
 }
 
 func (h *Handlers) ReadHandler() http.HandlerFunc {
@@ -136,8 +138,27 @@ func (h *Handlers) UpdateJSONHandler() http.HandlerFunc {
 
 			if m.MType == "gauge" && m.Value != nil {
 				MetricValue = fmt.Sprintf("%v", *m.Value)
+				if h.Key != "" {
+					hash := internal.Hash(fmt.Sprintf("%s:gauge:%f", m.ID, *m.Value), h.Key)
+					if !hmac.Equal([]byte(hash), []byte(m.Hash)) {
+						http.Error(w, "wrong hash", http.StatusBadRequest)
+						log.Printf("Wrong Hash of %s:gauge:%f\n%s\n%s", m.ID, *m.Value,
+							m.Hash, hash)
+						return
+					}
+				}
+
 			} else if m.MType == "counter" && m.Delta != nil {
 				MetricValue = fmt.Sprintf("%v", *m.Delta)
+				if h.Key != "" {
+					hash := internal.Hash(fmt.Sprintf("%s:counter:%d", m.ID, *m.Delta), h.Key)
+					if !hmac.Equal([]byte(hash), []byte(m.Hash)) {
+						http.Error(w, "wrong hash", http.StatusBadRequest)
+						log.Printf("Wrong Hash of %s:counter:%d\n%s\n%s", m.ID, *m.Delta,
+							m.Hash, hash)
+						return
+					}
+				}
 			} else {
 				http.Error(w, "wrong type", http.StatusNotImplemented)
 				log.Println("UpdateJSONHandler:", err)
@@ -212,12 +233,19 @@ func (h *Handlers) GetJSONHandler() http.HandlerFunc {
 					log.Println(err)
 				}
 				m.Value = &value
+				if h.Key != "" {
+					m.Hash = internal.Hash(fmt.Sprintf("%s:gauge:%f", m.ID, *m.Value), h.Key)
+				}
 			} else if m.MType == "counter" {
 				delta, err := strconv.ParseInt(v, 10, 64)
 				if err != nil {
 					log.Println(err)
 				}
 				m.Delta = &delta
+				if h.Key != "" {
+					m.Hash = internal.Hash(fmt.Sprintf("%s:counter:%d", m.ID, *m.Delta), h.Key)
+				}
+
 			}
 			//w.Header().Set("content-type", "application/json")
 			//w.WriteHeader(http.StatusOK)

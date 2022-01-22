@@ -25,13 +25,13 @@ func run() error {
 	}
 
 	log.Println("Agent start using args:ADDRESS", cfg.Address, "REPORT_INTERVAL",
-		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval)
+		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval, "KEY", cfg.Key)
 
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	var buf bytes.Buffer
 
-	getMetrics := internal.NewMonitor(&buf)
+	getMetrics := internal.NewMonitor(&buf, cfg.Key)
 	poll := time.Tick(cfg.PoolInterval)
 	report := time.Tick(cfg.ReportInterval)
 breakFor:
