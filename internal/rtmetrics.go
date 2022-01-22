@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -106,53 +107,23 @@ func NewMonitor(buf io.Writer, key string) func() {
 
 		//var buf bytes.Buffer
 		jsonEncoder := json.NewEncoder(buf)
-		for id, value := range rm.Gauge {
-			check(jsonEncoder.Encode(Metrics{ID: id, MType: "gauge", Value: &value}))
+		if key == "" {
+			for id, value := range rm.Gauge {
+				check(jsonEncoder.Encode(Metrics{ID: id, MType: "gauge", Value: &value}))
+			}
+			for id, delta := range rm.Counter {
+				check(jsonEncoder.Encode(Metrics{ID: id, MType: "counter", Delta: &delta}))
+			}
+		} else {
+			for id, value := range rm.Gauge {
+				check(jsonEncoder.Encode(Metrics{ID: id, MType: "gauge", Value: &value,
+					Hash: hash(fmt.Sprintf("%s:gauge:%f", id, value), key)}))
+			}
+			for id, delta := range rm.Counter {
+				check(jsonEncoder.Encode(Metrics{ID: id, MType: "counter", Delta: &delta,
+					Hash: hash(fmt.Sprintf("%s:counter:%d", id, delta), key)}))
+			}
 		}
-		for id, delta := range rm.Counter {
-			check(jsonEncoder.Encode(Metrics{ID: id, MType: "counter", Delta: &delta}))
-		}
-		/*
-			check(jsonEncoder.Encode(Metrics{ID: "Alloc", MType: "gauge", Value: &rm.Alloc}))
-			check(jsonEncoder.Encode(Metrics{ID: "TotalAlloc", MType: "gauge", Value: &rm.TotalAlloc}))
-			check(jsonEncoder.Encode(Metrics{ID: "BuckHashSys", MType: "gauge", Value: &rm.BuckHashSys}))
-			check(jsonEncoder.Encode(Metrics{ID: "Frees", MType: "gauge", Value: &rm.Frees}))
-			check(jsonEncoder.Encode(Metrics{ID: "GCCPUFraction", MType: "gauge", Value: &rm.GCCPUFraction}))
-			check(jsonEncoder.Encode(Metrics{ID: "GCSys", MType: "gauge", Value: &rm.GCSys}))
-			check(jsonEncoder.Encode(Metrics{ID: "HeapAlloc", MType: "gauge", Value: &rm.HeapAlloc}))
-			check(jsonEncoder.Encode(Metrics{ID: "HeapIdle", MType: "gauge", Value: &rm.HeapIdle}))
-			check(jsonEncoder.Encode(Metrics{ID: "HeapInuse", MType: "gauge", Value: &rm.HeapInuse}))
-			check(jsonEncoder.Encode(Metrics{ID: "HeapObjects", MType: "gauge", Value: &rm.HeapObjects}))
-			check(jsonEncoder.Encode(Metrics{ID: "HeapReleased", MType: "gauge", Value: &rm.HeapReleased}))
-			check(jsonEncoder.Encode(Metrics{ID: "HeapSys", MType: "gauge", Value: &rm.HeapSys}))
-			check(jsonEncoder.Encode(Metrics{ID: "LastGC", MType: "gauge", Value: &rm.LastGC}))
-			check(jsonEncoder.Encode(Metrics{ID: "Lookups", MType: "gauge", Value: &rm.Lookups}))
-			check(jsonEncoder.Encode(Metrics{ID: "MCacheInuse", MType: "gauge", Value: &rm.MCacheInuse}))
-			check(jsonEncoder.Encode(Metrics{ID: "MCacheSys", MType: "gauge", Value: &rm.MCacheSys}))
-			check(jsonEncoder.Encode(Metrics{ID: "MSpanInuse", MType: "gauge", Value: &rm.MSpanInuse}))
-			check(jsonEncoder.Encode(Metrics{ID: "MSpanSys", MType: "gauge", Value: &rm.MSpanSys}))
-			check(jsonEncoder.Encode(Metrics{ID: "Mallocs", MType: "gauge", Value: &rm.Mallocs}))
-			check(jsonEncoder.Encode(Metrics{ID: "NextGC", MType: "gauge", Value: &rm.NextGC}))
-			check(jsonEncoder.Encode(Metrics{ID: "NumForcedGC", MType: "gauge", Value: &rm.NumForcedGC}))
-			check(jsonEncoder.Encode(Metrics{ID: "NumGC", MType: "gauge", Value: &rm.NumGC}))
-			check(jsonEncoder.Encode(Metrics{ID: "OtherSys", MType: "gauge", Value: &rm.OtherSys}))
-			check(jsonEncoder.Encode(Metrics{ID: "PauseTotalNs", MType: "gauge", Value: &rm.PauseTotalNs}))
-			check(jsonEncoder.Encode(Metrics{ID: "StackInuse", MType: "gauge", Value: &rm.StackInuse}))
-			check(jsonEncoder.Encode(Metrics{ID: "StackSys", MType: "gauge", Value: &rm.StackSys}))
-			check(jsonEncoder.Encode(Metrics{ID: "Sys", MType: "gauge", Value: &rm.Sys}))
-			check(jsonEncoder.Encode(Metrics{ID: "RandomValue", MType: "gauge", Value: &rm.RandomValue}))
-			check(jsonEncoder.Encode(Metrics{ID: "PollCount", MType: "counter", Delta: &rm.PollCount}))
-
-			//fmt.Println(buf.Len(), buf.String())
-			//hash(fmt.Sprintf("%s:counter:%d", id, delta), key)
-			//hash(fmt.Sprintf("%s:gauge:%f", id, value), key)
-			fmt.Printf("%s:hash:%s\n", fmt.Sprintf("%s:counter:%d", "PollCount", rm.PollCount),
-				hash(fmt.Sprintf("%s:counter:%d", "PollCount", rm.PollCount), key))
-			fmt.Printf("%s:hash:%s\n", fmt.Sprintf("%s:gauge:%f", "Sys", rm.Sys),
-				hash(fmt.Sprintf("%s:gauge:%f", "Sys", rm.Sys), key))
-			fmt.Printf("%s:hash:%s\n", fmt.Sprintf("%s:gauge:%v", "RandomValue", &rm.RandomValue),
-				hash(fmt.Sprintf("%s:gauge:%f", "RandomValue", rm.RandomValue), key))
-		*/
 	}
 }
 
@@ -161,6 +132,6 @@ func hash(m, k string) string {
 	h.Write([]byte(m))
 	dst := h.Sum(nil)
 
-	//fmt.Printf("%x", dst)
+	log.Printf("%s:%x", m, dst)
 	return hex.EncodeToString(dst)
 }
