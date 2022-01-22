@@ -117,21 +117,21 @@ func NewMonitor(buf io.Writer, key string) func() {
 		} else {
 			for id, value := range rm.Gauge {
 				check(jsonEncoder.Encode(Metrics{ID: id, MType: "gauge", Value: &value,
-					Hash: hash(fmt.Sprintf("%s:gauge:%f", id, value), key)}))
+					Hash: Hash(fmt.Sprintf("%s:gauge:%f", id, value), key)}))
 			}
 			for id, delta := range rm.Counter {
 				check(jsonEncoder.Encode(Metrics{ID: id, MType: "counter", Delta: &delta,
-					Hash: hash(fmt.Sprintf("%s:counter:%d", id, delta), key)}))
+					Hash: Hash(fmt.Sprintf("%s:counter:%d", id, delta), key)}))
 			}
 		}
 	}
 }
 
-func hash(m, k string) string {
+func Hash(m, k string) string {
 	h := hmac.New(sha256.New, []byte(k))
 	h.Write([]byte(m))
 	dst := h.Sum(nil)
 
-	log.Printf("%s:%x", m, dst)
+	//log.Printf("%s:%x", m, dst)
 	return hex.EncodeToString(dst)
 }
