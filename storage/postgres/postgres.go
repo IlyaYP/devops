@@ -12,14 +12,14 @@ import (
 var _ storage.MetricStorage = (*Postgres)(nil)
 
 type Postgres struct {
-	DbDsn string
+	DBDsn string
 	conn  *pgx.Conn
 }
 
-func NewPostgres(DbDsn string) (*Postgres, error) {
+func NewPostgres(DBDsn string) (*Postgres, error) {
 	s := new(Postgres)
-	s.DbDsn = DbDsn
-	conn, err := pgx.Connect(context.Background(), s.DbDsn)
+	s.DBDsn = DBDsn
+	conn, err := pgx.Connect(context.Background(), s.DBDsn)
 	if err != nil {
 		log.Printf("Unable to connect to database: %v\n", err)
 		return nil, err
