@@ -33,7 +33,7 @@ type Config struct {
 	StoreFile     string        `env:"STORE_FILE"`
 	Restore       bool          `env:"RESTORE"`
 	Key           string        `env:"KEY"`
-	DbDsn         string        `env:"DATABASE_DSN"`
+	DBDsn         string        `env:"DATABASE_DSN"`
 }
 
 // Validate performs a basic validation.
@@ -59,7 +59,7 @@ func LoadConfig() (*Config, error) {
 	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "Store file")
 	flag.BoolVar(&cfg.Restore, "r", true, "Restore data from file when start")
 	flag.StringVar(&cfg.Key, "k", "", "Key")
-	flag.StringVar(&cfg.DbDsn, "d", "", "DATABASE_DSN")
+	flag.StringVar(&cfg.DBDsn, "d", "", "DATABASE_DSN")
 	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
 		log.Println(err)

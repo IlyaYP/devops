@@ -34,11 +34,11 @@ func run() error {
 
 	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
 		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore, "KEY",
-		cfg.Key, "DATABASE_DSN", cfg.DbDsn)
+		cfg.Key, "DATABASE_DSN", cfg.DBDsn)
 
 	// Storage Q: Решил пока оставить тут, но возможно лучше перенести в config?
 	var st storage.MetricStorage // Q: Это получается что? структура указатель или что?
-	if cfg.DbDsn == "" {
+	if cfg.DBDsn == "" {
 		if cfg.StoreFile == "" {
 			st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
 		} else {
@@ -51,7 +51,7 @@ func run() error {
 			defer stt.Close()
 		}
 	} else {
-		stt, err := postgres.NewPostgres(cfg.DbDsn)
+		stt, err := postgres.NewPostgres(cfg.DBDsn)
 		if err != nil {
 			log.Println(err)
 			return err
