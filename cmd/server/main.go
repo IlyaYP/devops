@@ -32,22 +32,26 @@ func run() error {
 	}
 
 	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
-		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore, "KEY", cfg.Key)
+		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore, "KEY",
+		cfg.Key, "DATABASE_DSN", cfg.DbDsn)
 
 	// Storage Q: Решил пока оставить тут, но возможно лучше перенести в config?
 	var st storage.MetricStorage // Q: Это получается что? структура указатель или что?
-	if cfg.StoreFile == "" {
-		st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
-	} else {
-		stt, err := infile.NewFileStorage(cfg) // Q: и тут
-		if err != nil {
-			log.Println(err)
-			return err
+	if cfg.DbDsn == "" {
+		if cfg.StoreFile == "" {
+			st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
+		} else {
+			stt, err := infile.NewFileStorage(cfg) // Q: и тут
+			if err != nil {
+				log.Println(err)
+				return err
+			}
+			st = stt // Q: Что получается я созадю копию структуры или указателья???
+			defer stt.Close()
 		}
-		st = stt // Q: Что получается я созадю копию структуры или указателья???
-		defer stt.Close()
-	}
+	} else {
 
+	}
 	// Handlers
 	h := new(handlers.Handlers)
 	h.Key = cfg.Key
