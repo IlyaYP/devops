@@ -8,6 +8,7 @@ import (
 	"github.com/IlyaYP/devops/storage"
 	"github.com/IlyaYP/devops/storage/infile"
 	"github.com/IlyaYP/devops/storage/inmemory"
+	"github.com/IlyaYP/devops/storage/postgres"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log"
@@ -50,7 +51,13 @@ func run() error {
 			defer stt.Close()
 		}
 	} else {
-
+		stt, err := postgres.NewPostgres(cfg.DbDsn)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		st = stt // Q: Что получается я созадю копию структуры или указателья???
+		defer stt.Close()
 	}
 	// Handlers
 	h := new(handlers.Handlers)
@@ -63,6 +70,7 @@ func run() error {
 	compressor := middleware.NewCompressor(flate.DefaultCompression)
 	r.Use(compressor.Handler)
 	r.Get("/", h.ReadHandler())
+	r.Get("/ping", h.Ping())
 	r.Post("/update/", h.UpdateJSONHandler())
 	r.Post("/value/", h.GetJSONHandler())
 	r.Get("/value/{MType}/{MName}", h.GetHandler())

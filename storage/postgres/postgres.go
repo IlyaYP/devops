@@ -1,6 +1,54 @@
 package postgres
 
-/*
+import (
+	"context"
+	"fmt"
+	"github.com/IlyaYP/devops/storage"
+	"github.com/jackc/pgx/v4"
+	"log"
+	"os"
+)
+
+var _ storage.MetricStorage = (*Postgres)(nil)
+
+type Postgres struct {
+	DbDsn string
+	conn  *pgx.Conn
+}
+
+func NewPostgres(DbDsn string) (*Postgres, error) {
+	s := new(Postgres)
+	s.DbDsn = DbDsn
+	conn, err := pgx.Connect(context.Background(), s.DbDsn)
+	if err != nil {
+		log.Printf("Unable to connect to database: %v\n", err)
+		return nil, err
+	}
+	s.conn = conn
+	return s, nil
+}
+
+func (c *Postgres) Ping() error {
+	return c.conn.Ping(context.Background())
+}
+
+func (c *Postgres) Close() {
+	c.conn.Close(context.Background())
+}
+
+func (c *Postgres) PutMetric(MetricType, MetricName, MetricValue string) error {
+
+	return nil
+}
+
+func (c *Postgres) GetMetric(MetricType, MetricName string) (string, error) {
+
+	return "777", nil
+}
+func (c *Postgres) ReadMetrics() map[string]map[string]string {
+	return map[string]map[string]string{"counter": {"PollCount": "1"}}
+}
+
 func test() {
 	// urlExample := "postgres://username:password@localhost:5432/database_name"
 	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
@@ -20,4 +68,3 @@ func test() {
 
 	fmt.Println(name, weight)
 }
-*/
