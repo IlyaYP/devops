@@ -105,7 +105,7 @@ func (c *Postgres) GetMetric(MetricType, MetricName string) (string, error) {
 		}
 	} else if MetricType == "counter" {
 		var delta int64
-		err := c.pool.QueryRow(context.Background(), "select value from counters where id=$1", MetricName).Scan(&delta)
+		err := c.pool.QueryRow(context.Background(), "select delta from counters where id=$1", MetricName).Scan(&delta)
 		switch err {
 		case nil:
 			return fmt.Sprintf("%v", delta), nil
