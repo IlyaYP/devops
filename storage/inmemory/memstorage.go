@@ -1,6 +1,7 @@
 package inmemory
 
 import (
+	"context"
 	"fmt"
 	"github.com/IlyaYP/devops/storage"
 	"log"
@@ -22,7 +23,7 @@ func NewMemStorage() *MemStorage {
 	return &s
 }
 
-func (s *MemStorage) Ping() error {
+func (s *MemStorage) Ping(ctx context.Context) error {
 	return nil
 }
 

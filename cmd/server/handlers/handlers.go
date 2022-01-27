@@ -22,7 +22,7 @@ type Handlers struct {
 func (h *Handlers) Ping() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		if err := h.St.Ping(); err != nil {
+		if err := h.St.Ping(r.Context()); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		} else {
 			w.WriteHeader(http.StatusOK)
