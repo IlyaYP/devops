@@ -200,6 +200,78 @@ func (h *Handlers) UpdateJSONHandler() http.HandlerFunc {
 	}
 }
 
+// UpdatesJSONHandler receiving updates in JSON array in body
+//POST http://localhost:8080/updates/
+func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		jsonDecoder := json.NewDecoder(r.Body)
+		for jsonDecoder.More() {
+			var mm []internal.Metrics
+			var MetricValue string
+
+			err := jsonDecoder.Decode(&mm)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				log.Println("UpdateJSONHandler:jsonDecoder.Decode", err)
+				return
+			}
+
+			for _, m := range mm {
+
+				if m.MType == "gauge" && m.Value != nil {
+					MetricValue = fmt.Sprintf("%v", *m.Value)
+					if h.Key != "" {
+						hash := internal.Hash(fmt.Sprintf("%s:gauge:%f", m.ID, *m.Value), h.Key)
+						if !hmac.Equal([]byte(hash), []byte(m.Hash)) {
+							http.Error(w, "wrong hash", http.StatusBadRequest)
+							log.Printf("Wrong Hash of %s:gauge:%f\n%s\n%s", m.ID, *m.Value,
+								m.Hash, hash)
+							return
+						}
+					}
+
+				} else if m.MType == "counter" && m.Delta != nil {
+					MetricValue = fmt.Sprintf("%v", *m.Delta)
+					if h.Key != "" {
+						hash := internal.Hash(fmt.Sprintf("%s:counter:%d", m.ID, *m.Delta), h.Key)
+						if !hmac.Equal([]byte(hash), []byte(m.Hash)) {
+							http.Error(w, "wrong hash", http.StatusBadRequest)
+							log.Printf("Wrong Hash of %s:counter:%d\n%s\n%s", m.ID, *m.Delta,
+								m.Hash, hash)
+							return
+						}
+					}
+				} else {
+					http.Error(w, "wrong type", http.StatusNotImplemented)
+					log.Println("UpdateJSONHandler:", err)
+					return
+				}
+
+				if err := h.St.PutMetric(m.MType, m.ID, MetricValue); err != nil {
+					if err.Error() == "wrong type" {
+						http.Error(w, err.Error(), http.StatusNotImplemented)
+					} else if err.Error() == "wrong value" {
+						http.Error(w, err.Error(), http.StatusBadRequest)
+					} else {
+						http.Error(w, "unknown error", http.StatusBadRequest)
+					}
+					log.Println("UpdateJSONHandler:PutMetric ", err)
+					return
+				}
+			}
+
+		}
+
+		w.Header().Set("content-type", "application/json")
+		w.Header().Set("application-type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte(`{"status":"ok"}`)); err != nil { // no need but doesn't pass test without it
+			log.Println("UpdateJSONHandler Write body:", err)
+			return
+		}
+	}
+}
+
 // GetJSONHandler receiving requests in JSON body, and responds via JSON in body
 //POST http://localhost:8080/value/
 func (h *Handlers) GetJSONHandler() http.HandlerFunc {

@@ -72,7 +72,7 @@ func run() error {
 	r.Get("/", h.ReadHandler())
 	r.Get("/ping", h.Ping())
 	r.Post("/update/", h.UpdateJSONHandler())
-	r.Post("/updates/", h.UpdateJSONHandler())
+	r.Post("/updates/", h.UpdatesJSONHandler())
 	r.Post("/value/", h.GetJSONHandler())
 	r.Get("/value/{MType}/{MName}", h.GetHandler())
 	r.Post("/update/{MType}/{MName}/{MVal}", h.UpdateHandler())
