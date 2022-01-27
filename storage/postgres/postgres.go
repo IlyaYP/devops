@@ -39,8 +39,8 @@ func NewPostgres(ctx context.Context, DBDsn string) (*Postgres, error) {
 	//}
 
 	// creating tables
-	_, err = pool.Exec(ctx, "CREATE TABLE IF NOT EXISTS gauges ( id varchar(20) primary key, value double precision);"+
-		"CREATE TABLE IF NOT EXISTS counters ( id varchar(20) primary key, delta bigint);")
+	_, err = pool.Exec(ctx, "CREATE TABLE IF NOT EXISTS gauges ( id varchar(40) primary key, value double precision);"+
+		"CREATE TABLE IF NOT EXISTS counters ( id varchar(40) primary key, delta bigint);")
 	if err != nil {
 		log.Printf("Unable to create table: %v\n", err)
 		return nil, err
