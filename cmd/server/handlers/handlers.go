@@ -19,6 +19,17 @@ type Handlers struct {
 	Key string
 }
 
+func (h *Handlers) Ping() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		if err := h.St.Ping(); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	}
+}
+
 func (h *Handlers) ReadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := h.St.ReadMetrics()

@@ -8,6 +8,7 @@ import (
 	"github.com/IlyaYP/devops/storage"
 	"github.com/IlyaYP/devops/storage/infile"
 	"github.com/IlyaYP/devops/storage/inmemory"
+	"github.com/IlyaYP/devops/storage/postgres"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log"
@@ -32,14 +33,25 @@ func run() error {
 	}
 
 	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
-		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore, "KEY", cfg.Key)
+		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore, "KEY",
+		cfg.Key, "DATABASE_DSN", cfg.DBDsn)
 
 	// Storage Q: Решил пока оставить тут, но возможно лучше перенести в config?
 	var st storage.MetricStorage // Q: Это получается что? структура указатель или что?
-	if cfg.StoreFile == "" {
-		st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
+	if cfg.DBDsn == "" {
+		if cfg.StoreFile == "" {
+			st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
+		} else {
+			stt, err := infile.NewFileStorage(cfg) // Q: и тут
+			if err != nil {
+				log.Println(err)
+				return err
+			}
+			st = stt // Q: Что получается я созадю копию структуры или указателья???
+			defer stt.Close()
+		}
 	} else {
-		stt, err := infile.NewFileStorage(cfg) // Q: и тут
+		stt, err := postgres.NewPostgres(cfg.DBDsn)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -47,7 +59,6 @@ func run() error {
 		st = stt // Q: Что получается я созадю копию структуры или указателья???
 		defer stt.Close()
 	}
-
 	// Handlers
 	h := new(handlers.Handlers)
 	h.Key = cfg.Key
@@ -59,6 +70,7 @@ func run() error {
 	compressor := middleware.NewCompressor(flate.DefaultCompression)
 	r.Use(compressor.Handler)
 	r.Get("/", h.ReadHandler())
+	r.Get("/ping", h.Ping())
 	r.Post("/update/", h.UpdateJSONHandler())
 	r.Post("/value/", h.GetJSONHandler())
 	r.Get("/value/{MType}/{MName}", h.GetHandler())

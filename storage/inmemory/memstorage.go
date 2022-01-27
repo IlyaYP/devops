@@ -22,6 +22,10 @@ func NewMemStorage() *MemStorage {
 	return &s
 }
 
+func (s *MemStorage) Ping() error {
+	return nil
+}
+
 func (s *MemStorage) PutMetric(MetricType, MetricName, MetricValue string) error {
 	//fmt.Println("Put:", MetricType, MetricName, MetricValue)
 	// To write to the storage, take the write lock:
