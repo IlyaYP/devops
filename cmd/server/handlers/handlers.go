@@ -87,7 +87,7 @@ func (h *Handlers) GetHandler() http.HandlerFunc {
 		if err != nil {
 			if err.Error() == "wrong type" {
 				http.Error(w, err.Error(), http.StatusNotImplemented)
-			} else if err.Error() == "no such metric" {
+			} else if strings.HasPrefix(err.Error(), "no such metric") {
 				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -230,7 +230,7 @@ func (h *Handlers) GetJSONHandler() http.HandlerFunc {
 			if err != nil {
 				if err.Error() == "wrong type" {
 					http.Error(w, err.Error(), http.StatusNotImplemented)
-				} else if err.Error() == "no such metric" {
+				} else if strings.HasPrefix(err.Error(), "no such metric") {
 					http.Error(w, err.Error(), http.StatusNotFound)
 				} else {
 					http.Error(w, err.Error(), http.StatusBadRequest)
