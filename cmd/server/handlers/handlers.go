@@ -22,7 +22,7 @@ type Handlers struct {
 func (h *Handlers) Ping() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		if err := h.St.Ping(); err != nil {
+		if err := h.St.Ping(r.Context()); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		} else {
 			w.WriteHeader(http.StatusOK)
@@ -87,7 +87,7 @@ func (h *Handlers) GetHandler() http.HandlerFunc {
 		if err != nil {
 			if err.Error() == "wrong type" {
 				http.Error(w, err.Error(), http.StatusNotImplemented)
-			} else if err.Error() == "no such metric" {
+			} else if strings.HasPrefix(err.Error(), "no such metric") {
 				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -230,7 +230,7 @@ func (h *Handlers) GetJSONHandler() http.HandlerFunc {
 			if err != nil {
 				if err.Error() == "wrong type" {
 					http.Error(w, err.Error(), http.StatusNotImplemented)
-				} else if err.Error() == "no such metric" {
+				} else if strings.HasPrefix(err.Error(), "no such metric") {
 					http.Error(w, err.Error(), http.StatusNotFound)
 				} else {
 					http.Error(w, err.Error(), http.StatusBadRequest)

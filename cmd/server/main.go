@@ -51,7 +51,7 @@ func run() error {
 			defer stt.Close()
 		}
 	} else {
-		stt, err := postgres.NewPostgres(cfg.DBDsn)
+		stt, err := postgres.NewPostgres(context.Background(), cfg.DBDsn)
 		if err != nil {
 			log.Println(err)
 			return err
