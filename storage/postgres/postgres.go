@@ -77,7 +77,6 @@ func (c *Postgres) PutMetric(MetricType, MetricName, MetricValue string) error {
 	default:
 		return fmt.Errorf("wrong type %s", MetricType)
 	}
-	return nil
 }
 
 func (c *Postgres) PutGauge(MetricName string, value float64) error {
@@ -118,7 +117,6 @@ func (c *Postgres) GetMetric(MetricType, MetricName string) (string, error) {
 	} else {
 		return "", fmt.Errorf("wrong type %s", MetricType)
 	}
-	return "777", nil // Why we are here?
 }
 func (c *Postgres) ReadMetrics() map[string]map[string]string {
 	ret := make(map[string]map[string]string)
