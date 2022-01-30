@@ -32,6 +32,7 @@ func SendBuf(endpoint string, buf io.Reader) error {
 		return err
 	}
 	request.Header.Set("Content-Type", "application/json")
+	//request.Header.Set("Content-Encoding", "gzip") // TODO: Add compressing
 	//request.Header.Set("Content-Length", strconv.Itoa(len(data)))
 	//request.Header.Set("application-type", "text/plain")
 	response, err := client.Do(request)
