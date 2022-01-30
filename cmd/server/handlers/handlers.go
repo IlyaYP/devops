@@ -172,7 +172,7 @@ func (h *Handlers) UpdateJSONHandler() http.HandlerFunc {
 				}
 			} else {
 				http.Error(w, "wrong type", http.StatusNotImplemented)
-				log.Println("UpdateJSONHandler:", err)
+				log.Println("UpdateJSONHandler:", m)
 				return
 			}
 
@@ -229,7 +229,6 @@ func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
 							return
 						}
 					}
-
 				} else if m.MType == "counter" && m.Delta != nil {
 					MetricValue = fmt.Sprintf("%v", *m.Delta)
 					if h.Key != "" {
@@ -243,7 +242,7 @@ func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
 					}
 				} else {
 					http.Error(w, "wrong type", http.StatusNotImplemented)
-					log.Println("UpdateJSONHandler:", err)
+					log.Println("UpdatesJSONHandler:", m)
 					return
 				}
 

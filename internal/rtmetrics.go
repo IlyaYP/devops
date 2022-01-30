@@ -20,7 +20,9 @@ func NewMonitor(buf *bytes.Buffer, key string) func() {
 
 	return func() {
 		rm.Update()
-		rm.GetJSONStream()
+		rm.WriteJSONtoBuf()
+		//rm.GetJSONSArray()
+		//log.Println(rm.Buf)
 	}
 }
 
@@ -45,11 +47,20 @@ type RunTimeMetrics struct {
 }
 
 type Metrics struct {
-	ID    string   `json:"id"`              // имя метрики
-	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	ID    string `json:"id"`              // имя метрики
+	MType string `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64 `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	// видимо указатель для того чтобы передавались значения равные 0
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 	Hash  string   `json:"hash,omitempty"`  // значение хеш-функции
+}
+
+type MetricsStorage struct {
+	ID    string  `json:"id"`              // имя метрики
+	MType string  `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	Hash  string  `json:"hash,omitempty"`  // значение хеш-функции
 }
 
 func (rm *RunTimeMetrics) Update() {
@@ -94,8 +105,8 @@ func (rm *RunTimeMetrics) Run() {
 	}
 }
 
-// GetJSONStream writes metrics to buf as JSON stream
-func (rm *RunTimeMetrics) GetJSONStream() {
+// WriteJSONtoBuf writes metrics to buf as JSON stream
+func (rm *RunTimeMetrics) WriteJSONtoBuf() {
 	check := func(err error) { // TODO: переделать костыль
 		if err != nil {
 			log.Println(err)
@@ -126,7 +137,8 @@ func (rm *RunTimeMetrics) GetJSONStream() {
 	}
 }
 
-// GetJSONSlice writes metrics to buf as JSON Array
+// GetJSONSArray writes metrics to buf as JSON Array
+// TODO: вместо этого переделать чтоб получить из буфера в виде массива
 func (rm *RunTimeMetrics) GetJSONSArray() {
 	check := func(err error) { // TODO: переделать костыль
 		if err != nil {
@@ -138,25 +150,24 @@ func (rm *RunTimeMetrics) GetJSONSArray() {
 		log.Println("nil Pointer rm.Buf")
 		return
 	}
-	var m []Metrics
+	var m []MetricsStorage
 	if rm.Key == "" {
 		for id, value := range rm.Gauge {
-			m = append(m, Metrics{ID: id, MType: "gauge", Value: &value})
+			m = append(m, MetricsStorage{ID: id, MType: "gauge", Value: value})
 		}
 		for id, delta := range rm.Counter {
-			m = append(m, Metrics{ID: id, MType: "counter", Delta: &delta})
+			m = append(m, MetricsStorage{ID: id, MType: "counter", Delta: delta})
 		}
 	} else {
 		for id, value := range rm.Gauge {
-			m = append(m, Metrics{ID: id, MType: "gauge", Value: &value,
+			m = append(m, MetricsStorage{ID: id, MType: "gauge", Value: value,
 				Hash: Hash(fmt.Sprintf("%s:gauge:%f", id, value), rm.Key)})
 		}
 		for id, delta := range rm.Counter {
-			m = append(m, Metrics{ID: id, MType: "counter", Delta: &delta,
+			m = append(m, MetricsStorage{ID: id, MType: "counter", Delta: delta,
 				Hash: Hash(fmt.Sprintf("%s:counter:%d", id, delta), rm.Key)})
 		}
 	}
-
 	jsonEncoder := json.NewEncoder(rm.Buf)
 	check(jsonEncoder.Encode(m))
 }
