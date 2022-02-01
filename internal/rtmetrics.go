@@ -150,10 +150,12 @@ func (rm *RunTimeMetrics) Update() {
 }
 
 func (rm *RunTimeMetrics) Run(ctx context.Context) {
-	poll := time.Tick(rm.PoolInterval)
+	//poll := time.Tick(rm.PoolInterval)
+	poll := time.NewTicker(rm.PoolInterval)
+	defer poll.Stop()
 	for {
 		select {
-		case <-poll:
+		case <-poll.C:
 			rm.Collect()
 		case <-ctx.Done():
 			return
