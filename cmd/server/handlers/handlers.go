@@ -210,24 +210,35 @@ func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
 
 		//log.Println("UpdatesJSONHandler:", r.Header.Values("Content-Encoding"))
 		//log.Println("UpdatesJSONHandler:", r.Header.Values("Content-Length"))
-		body, _ := io.ReadAll(r.Body)
 
-		rr := flate.NewReader(bytes.NewReader(body))
-		defer rr.Close()
-
-		var b bytes.Buffer
-		// в переменную b записываются распакованные данные
-		_, err := b.ReadFrom(rr)
-		if err != nil {
-			log.Printf("failed decompress data: %v", err)
-			return
+		enc := r.Header.Values("Content-Encoding")
+		var gzip bool
+		for _, v := range enc {
+			if v == "gzip" {
+				gzip = true
+			}
 		}
+		var jsonDecoder *json.Decoder
+		if gzip {
+			body, _ := io.ReadAll(r.Body)
+			defer r.Body.Close()
 
-		//log.Println("request Body:", b.String())
+			rr := flate.NewReader(bytes.NewReader(body))
+			defer rr.Close()
 
-		///*
-		//	jsonDecoder := json.NewDecoder(r.Body)
-		jsonDecoder := json.NewDecoder(&b)
+			var b bytes.Buffer
+			// в переменную b записываются распакованные данные
+			_, err := b.ReadFrom(rr)
+			if err != nil {
+				log.Printf("failed decompress data: %v", err)
+				return
+			}
+
+			//log.Println("request Body:", b.String())
+			jsonDecoder = json.NewDecoder(&b)
+		} else {
+			jsonDecoder = json.NewDecoder(r.Body)
+		}
 		for jsonDecoder.More() {
 			var mm []internal.Metrics
 			var MetricValue string
@@ -281,7 +292,6 @@ func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
 					return
 				}
 			}
-
 		}
 
 		w.Header().Set("content-type", "application/json")
@@ -291,7 +301,6 @@ func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
 			log.Println("UpdateJSONHandler Write body:", err)
 			return
 		}
-		//*/
 	}
 }
 
