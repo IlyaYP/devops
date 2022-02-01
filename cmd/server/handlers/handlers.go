@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"bytes"
+	"compress/flate"
 	"crypto/hmac"
 	"encoding/json"
 	"fmt"
 	"github.com/IlyaYP/devops/internal"
 	"github.com/IlyaYP/devops/storage"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"sort"
@@ -204,7 +207,27 @@ func (h *Handlers) UpdateJSONHandler() http.HandlerFunc {
 //POST http://localhost:8080/updates/
 func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		jsonDecoder := json.NewDecoder(r.Body)
+
+		//log.Println("UpdatesJSONHandler:", r.Header.Values("Content-Encoding"))
+		//log.Println("UpdatesJSONHandler:", r.Header.Values("Content-Length"))
+		body, _ := io.ReadAll(r.Body)
+
+		rr := flate.NewReader(bytes.NewReader(body))
+		defer rr.Close()
+
+		var b bytes.Buffer
+		// в переменную b записываются распакованные данные
+		_, err := b.ReadFrom(rr)
+		if err != nil {
+			log.Printf("failed decompress data: %v", err)
+			return
+		}
+
+		//log.Println("request Body:", b.String())
+
+		///*
+		//	jsonDecoder := json.NewDecoder(r.Body)
+		jsonDecoder := json.NewDecoder(&b)
 		for jsonDecoder.More() {
 			var mm []internal.Metrics
 			var MetricValue string
@@ -212,7 +235,7 @@ func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
 			err := jsonDecoder.Decode(&mm)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
-				log.Println("UpdateJSONHandler:jsonDecoder.Decode", err)
+				log.Println("UpdatesJSONHandler:jsonDecoder.Decode", err)
 				return
 			}
 
@@ -268,6 +291,7 @@ func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
 			log.Println("UpdateJSONHandler Write body:", err)
 			return
 		}
+		//*/
 	}
 }
 
