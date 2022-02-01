@@ -31,16 +31,16 @@ func run() error {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	var buf bytes.Buffer
 
-	getMetrics := internal.NewMonitor(&buf, cfg.Key)
+	Metrics := internal.NewRTM(&buf, cfg.Key)
 	poll := time.Tick(cfg.PoolInterval)
 	report := time.Tick(cfg.ReportInterval)
 breakFor:
 	for {
 		select {
 		case <-poll:
-			getMetrics()
+			Metrics.Collect()
 		case <-report:
-			if err := internal.SendBufRetry(cfg.EndPoint, &buf); err != nil {
+			if err := internal.SendBufRetry(cfg.EndPoint, Metrics.GetJSON()); err != nil {
 				log.Println(err)
 				log.Println("Ok, let's try again later")
 			}

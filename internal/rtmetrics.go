@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -13,28 +14,9 @@ import (
 	"time"
 )
 
-func NewMonitor(buf *bytes.Buffer, key string) func() {
-	rm := NewRTM()
-	rm.Key = key
-	rm.Buf = buf
-
-	return func() {
-		rm.Update()
-		rm.WriteJSONtoBuf()
-		//rm.GetJSONSArray()
-		//log.Println(rm.Buf)
-	}
-}
-
-func NewRTM() *RunTimeMetrics {
-	var rm RunTimeMetrics
-	rm.Gauge = make(map[string]float64)
-	rm.Counter = make(map[string]int64)
-	rm.Counter["PollCount"] = 0
-	s1 := rand.NewSource(time.Now().UnixNano())
-	rm.rnd = rand.New(s1)
-	return &rm
-}
+const (
+	QueueSize = 200
+)
 
 type RunTimeMetrics struct {
 	Gauge        map[string]float64
@@ -44,6 +26,76 @@ type RunTimeMetrics struct {
 	PoolInterval time.Duration
 	Key          string
 	Buf          *bytes.Buffer
+	queue        chan MetricsStorage
+	slice        []MetricsStorage
+}
+
+func NewRTM(buf *bytes.Buffer, key string) *RunTimeMetrics {
+	var rm RunTimeMetrics
+	rm.Key = key
+	rm.Buf = buf
+	rm.Gauge = make(map[string]float64)
+	rm.Counter = make(map[string]int64)
+	rm.Counter["PollCount"] = 0
+	s1 := rand.NewSource(time.Now().UnixNano())
+	rm.rnd = rand.New(s1)
+	rm.queue = make(chan MetricsStorage, QueueSize)
+
+	return &rm
+}
+
+func NewMonitor(buf *bytes.Buffer, key string) func() {
+	rm := NewRTM(buf, key)
+
+	return func() {
+		rm.Update()
+		rm.WriteJSONtoBuf()
+	}
+}
+
+func (rm *RunTimeMetrics) addToSlice() {
+	if rm.Key == "" {
+		for id, value := range rm.Gauge {
+			rm.slice = append(rm.slice, MetricsStorage{ID: id, MType: "gauge", Value: value})
+		}
+		for id, delta := range rm.Counter {
+			rm.slice = append(rm.slice, MetricsStorage{ID: id, MType: "counter", Delta: delta})
+		}
+	} else {
+		for id, value := range rm.Gauge {
+			rm.slice = append(rm.slice, MetricsStorage{ID: id, MType: "gauge", Value: value,
+				Hash: Hash(fmt.Sprintf("%s:gauge:%f", id, value), rm.Key)})
+		}
+		for id, delta := range rm.Counter {
+			rm.slice = append(rm.slice, MetricsStorage{ID: id, MType: "counter", Delta: delta,
+				Hash: Hash(fmt.Sprintf("%s:counter:%d", id, delta), rm.Key)})
+		}
+	}
+}
+
+// GetJSON writes metrics to buf as JSON Array
+func (rm *RunTimeMetrics) GetJSON() *bytes.Buffer {
+
+	//for len(rm.slice) > 0 {
+	//	fmt.Print(rm.slice[0])  // First element
+	//	rm.slice = rm.slice[1:] // Dequeue
+	//}
+	var m []Metrics
+	for i, metricsStorage := range rm.slice {
+		if metricsStorage.MType == "counter" {
+			m = append(m, Metrics{ID: metricsStorage.ID, MType: metricsStorage.MType, Delta: &rm.slice[i].Delta,
+				Hash: metricsStorage.Hash})
+		} else if metricsStorage.MType == "gauge" {
+			m = append(m, Metrics{ID: metricsStorage.ID, MType: metricsStorage.MType, Value: &rm.slice[i].Value,
+				Hash: metricsStorage.Hash})
+		}
+	}
+	if err := json.NewEncoder(rm.Buf).Encode(m); err != nil {
+		log.Printf("Error marshal JSON in GetJSON():%s", err)
+		return nil
+	}
+	rm.slice = nil
+	return rm.Buf
 }
 
 type Metrics struct {
@@ -97,12 +149,20 @@ func (rm *RunTimeMetrics) Update() {
 	rm.Gauge["Sys"] = float64(rm.rtm.Sys)
 }
 
-func (rm *RunTimeMetrics) Run() {
+func (rm *RunTimeMetrics) Run(ctx context.Context) {
 	poll := time.Tick(rm.PoolInterval)
 	for {
-		<-poll
-		rm.Update()
+		select {
+		case <-poll:
+			rm.Collect()
+		case <-ctx.Done():
+			return
+		}
 	}
+}
+func (rm *RunTimeMetrics) Collect() {
+	rm.Update()
+	rm.addToSlice()
 }
 
 // WriteJSONtoBuf writes metrics to buf as JSON stream
@@ -137,39 +197,13 @@ func (rm *RunTimeMetrics) WriteJSONtoBuf() {
 	}
 }
 
-// GetJSONSArray writes metrics to buf as JSON Array
-// TODO: вместо этого переделать чтоб получить из буфера в виде массива
-func (rm *RunTimeMetrics) GetJSONSArray() {
-	check := func(err error) { // TODO: переделать костыль
-		if err != nil {
-			log.Println(err)
-		}
-	}
-
-	if rm.Buf == nil {
-		log.Println("nil Pointer rm.Buf")
-		return
-	}
-	var m []MetricsStorage
-	if rm.Key == "" {
-		for id, value := range rm.Gauge {
-			m = append(m, MetricsStorage{ID: id, MType: "gauge", Value: value})
-		}
-		for id, delta := range rm.Counter {
-			m = append(m, MetricsStorage{ID: id, MType: "counter", Delta: delta})
-		}
-	} else {
-		for id, value := range rm.Gauge {
-			m = append(m, MetricsStorage{ID: id, MType: "gauge", Value: value,
-				Hash: Hash(fmt.Sprintf("%s:gauge:%f", id, value), rm.Key)})
-		}
-		for id, delta := range rm.Counter {
-			m = append(m, MetricsStorage{ID: id, MType: "counter", Delta: delta,
-				Hash: Hash(fmt.Sprintf("%s:counter:%d", id, delta), rm.Key)})
-		}
-	}
-	jsonEncoder := json.NewEncoder(rm.Buf)
-	check(jsonEncoder.Encode(m))
+// GetJSONSasArray writes metrics to buf as JSON Array
+func (rm *RunTimeMetrics) GetJSONSasArray() *bytes.Buffer {
+	var newBuf bytes.Buffer
+	newBuf.WriteString("[")
+	newBuf.ReadFrom(rm.Buf)
+	newBuf.WriteString("]")
+	return &newBuf
 }
 
 func Hash(m, k string) string {
