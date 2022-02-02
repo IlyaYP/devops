@@ -34,13 +34,18 @@ func run() error {
 	var buf bytes.Buffer
 
 	Metrics := internal.NewRTM(&buf, cfg.Key)
-	poll := time.Tick(cfg.PoolInterval)
+	Metrics.PoolInterval = cfg.PoolInterval
+	go Metrics.Run(ctx)
+	//poll := time.Tick(cfg.PoolInterval)
 	report := time.Tick(cfg.ReportInterval)
 breakFor:
 	for {
 		select {
-		case <-poll:
-			Metrics.Collect()
+		case <-ctx.Done():
+			log.Println("Shutdown Agent ...")
+			break breakFor
+		//case <-poll:
+		//	Metrics.Collect()
 		case <-report:
 			//log.Println("before", buf.Len())
 			Metrics.GetJSON()
@@ -50,9 +55,6 @@ breakFor:
 				log.Println("Ok, let's try again later")
 			}
 			//log.Println("after send", buf.Len())
-		case <-ctx.Done():
-			log.Println("Shutdown Agent ...")
-			break breakFor
 		}
 	}
 	return nil

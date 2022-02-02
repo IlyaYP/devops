@@ -18,6 +18,10 @@ const (
 	QueueSize = 200
 )
 
+//#   * Имя метрики: "TotalMemory", тип: gauge
+//#   * Имя метрики: "FreeMemory", тип: gauge
+//#   * Имя метрики: "CPUutilization1", тип: gauge (точное количество - по числу CPU определяемое во время исполнения)
+
 type RunTimeMetrics struct {
 	Gauge        map[string]float64
 	Counter      map[string]int64
@@ -158,6 +162,7 @@ func (rm *RunTimeMetrics) Run(ctx context.Context) {
 		case <-poll.C:
 			rm.Collect()
 		case <-ctx.Done():
+			log.Println("Agent Run exiting...")
 			return
 		}
 	}
