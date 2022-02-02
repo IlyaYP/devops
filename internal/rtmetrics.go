@@ -8,6 +8,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/shirou/gopsutil/v3/load"
+	"github.com/shirou/gopsutil/v3/mem"
 	"log"
 	"math/rand"
 	"runtime"
@@ -17,10 +19,6 @@ import (
 const (
 	QueueSize = 200
 )
-
-//#   * Имя метрики: "TotalMemory", тип: gauge
-//#   * Имя метрики: "FreeMemory", тип: gauge
-//#   * Имя метрики: "CPUutilization1", тип: gauge (точное количество - по числу CPU определяемое во время исполнения)
 
 type RunTimeMetrics struct {
 	Gauge        map[string]float64
@@ -119,6 +117,10 @@ type MetricsStorage struct {
 	Hash  string  `json:"hash,omitempty"`  // значение хеш-функции
 }
 
+//#   * Имя метрики: "TotalMemory", тип: gauge
+//#   * Имя метрики: "FreeMemory", тип: gauge
+//#   * Имя метрики: "CPUutilization1", тип: gauge (точное количество - по числу CPU определяемое во время исполнения)
+
 func (rm *RunTimeMetrics) Update() {
 	runtime.ReadMemStats(&rm.rtm)
 
@@ -151,6 +153,14 @@ func (rm *RunTimeMetrics) Update() {
 	rm.Gauge["StackInuse"] = float64(rm.rtm.StackInuse)
 	rm.Gauge["StackSys"] = float64(rm.rtm.StackSys)
 	rm.Gauge["Sys"] = float64(rm.rtm.Sys)
+
+	// gopsutil
+	v, _ := mem.VirtualMemory()
+	info, _ := load.Avg()
+	rm.Gauge["TotalMemory"] = float64(v.Total)
+	rm.Gauge["FreeMemory"] = float64(v.Free)
+	rm.Gauge["CPUutilization1"] = float64(info.Load1)
+
 }
 
 func (rm *RunTimeMetrics) Run(ctx context.Context) {
