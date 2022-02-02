@@ -153,7 +153,6 @@ func (rm *RunTimeMetrics) Update() {
 	rm.Gauge["StackInuse"] = float64(rm.rtm.StackInuse)
 	rm.Gauge["StackSys"] = float64(rm.rtm.StackSys)
 	rm.Gauge["Sys"] = float64(rm.rtm.Sys)
-
 	// gopsutil
 	v, _ := mem.VirtualMemory()
 	info, _ := load.Avg()
