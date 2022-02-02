@@ -158,7 +158,9 @@ func (rm *RunTimeMetrics) Update() {
 	info, _ := load.Avg()
 	rm.Gauge["TotalMemory"] = float64(v.Total)
 	rm.Gauge["FreeMemory"] = float64(v.Free)
-	rm.Gauge["CPUutilization1"] = float64(info.Load1)
+	rm.Gauge["CPUutilization1"] = info.Load1
+	// just try ;))
+	rm.Gauge["TotalMemory"] = rm.Gauge["TotalMemory"] * rm.rnd.Float64()
 
 }
 
