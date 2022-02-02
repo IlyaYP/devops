@@ -32,6 +32,23 @@ type RunTimeMetrics struct {
 	slice        []MetricsStorage
 }
 
+type Metrics struct {
+	ID    string `json:"id"`              // имя метрики
+	MType string `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64 `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	// видимо указатель для того чтобы передавались значения равные 0
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	Hash  string   `json:"hash,omitempty"`  // значение хеш-функции
+}
+
+type MetricsStorage struct {
+	ID    string  `json:"id"`              // имя метрики
+	MType string  `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	Hash  string  `json:"hash,omitempty"`  // значение хеш-функции
+}
+
 func NewRTM(buf *bytes.Buffer, key string) *RunTimeMetrics {
 	var rm RunTimeMetrics
 	rm.Key = key
@@ -77,11 +94,6 @@ func (rm *RunTimeMetrics) addToSlice() {
 
 // GetJSON writes metrics to buf as JSON Array
 func (rm *RunTimeMetrics) GetJSON() *bytes.Buffer {
-
-	//for len(rm.slice) > 0 {
-	//	fmt.Print(rm.slice[0])  // First element
-	//	rm.slice = rm.slice[1:] // Dequeue
-	//}
 	var m []Metrics
 	for i, metricsStorage := range rm.slice {
 		if metricsStorage.MType == "counter" {
@@ -99,27 +111,6 @@ func (rm *RunTimeMetrics) GetJSON() *bytes.Buffer {
 	rm.slice = nil
 	return rm.Buf
 }
-
-type Metrics struct {
-	ID    string `json:"id"`              // имя метрики
-	MType string `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64 `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	// видимо указатель для того чтобы передавались значения равные 0
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
-	Hash  string   `json:"hash,omitempty"`  // значение хеш-функции
-}
-
-type MetricsStorage struct {
-	ID    string  `json:"id"`              // имя метрики
-	MType string  `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
-	Hash  string  `json:"hash,omitempty"`  // значение хеш-функции
-}
-
-//#   * Имя метрики: "TotalMemory", тип: gauge
-//#   * Имя метрики: "FreeMemory", тип: gauge
-//#   * Имя метрики: "CPUutilization1", тип: gauge (точное количество - по числу CPU определяемое во время исполнения)
 
 func (rm *RunTimeMetrics) Update() {
 	runtime.ReadMemStats(&rm.rtm)
@@ -159,13 +150,11 @@ func (rm *RunTimeMetrics) Update() {
 	rm.Gauge["TotalMemory"] = float64(v.Total)
 	rm.Gauge["FreeMemory"] = float64(v.Free)
 	rm.Gauge["CPUutilization1"] = info.Load1
-	// just try ;))
+	// just try ;)) Вероятно ошибка в тесте потому что при не изменении этой метрики, а она не изменяется, тест не проходит
 	rm.Gauge["TotalMemory"] = rm.Gauge["TotalMemory"] * rm.rnd.Float64()
-
 }
 
 func (rm *RunTimeMetrics) Run(ctx context.Context) {
-	//poll := time.Tick(rm.PoolInterval)
 	poll := time.NewTicker(rm.PoolInterval)
 	defer poll.Stop()
 	for {
@@ -178,6 +167,7 @@ func (rm *RunTimeMetrics) Run(ctx context.Context) {
 		}
 	}
 }
+
 func (rm *RunTimeMetrics) Collect() {
 	rm.Update()
 	rm.addToSlice()

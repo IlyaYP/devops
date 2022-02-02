@@ -36,7 +36,6 @@ func run() error {
 	Metrics := internal.NewRTM(&buf, cfg.Key)
 	Metrics.PoolInterval = cfg.PoolInterval
 	go Metrics.Run(ctx)
-	//poll := time.Tick(cfg.PoolInterval)
 	report := time.Tick(cfg.ReportInterval)
 breakFor:
 	for {
@@ -44,17 +43,12 @@ breakFor:
 		case <-ctx.Done():
 			log.Println("Shutdown Agent ...")
 			break breakFor
-		//case <-poll:
-		//	Metrics.Collect()
 		case <-report:
-			//log.Println("before", buf.Len())
 			Metrics.GetJSON()
-			//log.Println("after", buf.Len())
 			if err := internal.SendBufRetry(cfg.EndPoint, &buf); err != nil {
 				log.Println(err)
 				log.Println("Ok, let's try again later")
 			}
-			//log.Println("after send", buf.Len())
 		}
 	}
 	return nil
