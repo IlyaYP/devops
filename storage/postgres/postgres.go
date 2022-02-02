@@ -122,6 +122,7 @@ func (c *Postgres) ReadMetrics() map[string]map[string]string {
 	ret := make(map[string]map[string]string)
 	ret["counters"] = make(map[string]string)
 	counters, _ := c.pool.Query(context.Background(), "select * from counters")
+	defer counters.Close()
 
 	for counters.Next() {
 		var id string
@@ -135,6 +136,7 @@ func (c *Postgres) ReadMetrics() map[string]map[string]string {
 
 	ret["gauges"] = make(map[string]string)
 	gauges, _ := c.pool.Query(context.Background(), "select * from gauges")
+	defer gauges.Close()
 
 	for gauges.Next() {
 		var id string

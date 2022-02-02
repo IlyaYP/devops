@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"github.com/IlyaYP/devops/cmd/agent/config"
 	"github.com/IlyaYP/devops/internal"
 	"log"
@@ -27,26 +28,27 @@ func run() error {
 	log.Println("Agent start using args:ADDRESS", cfg.Address, "REPORT_INTERVAL",
 		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval, "KEY", cfg.Key)
 
-	quit := make(chan os.Signal, 2)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer stop()
+
 	var buf bytes.Buffer
 
-	getMetrics := internal.NewMonitor(&buf, cfg.Key)
-	poll := time.Tick(cfg.PoolInterval)
+	Metrics := internal.NewRTM(&buf, cfg.Key)
+	Metrics.PoolInterval = cfg.PoolInterval
+	go Metrics.Run(ctx)
 	report := time.Tick(cfg.ReportInterval)
 breakFor:
 	for {
 		select {
-		case <-poll:
-			getMetrics()
+		case <-ctx.Done():
+			log.Println("Shutdown Agent ...")
+			break breakFor
 		case <-report:
+			Metrics.GetJSON()
 			if err := internal.SendBufRetry(cfg.EndPoint, &buf); err != nil {
 				log.Println(err)
 				log.Println("Ok, let's try again later")
 			}
-		case <-quit:
-			log.Println("Shutdown Agent ...")
-			break breakFor
 		}
 	}
 	return nil

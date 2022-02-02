@@ -39,7 +39,8 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 
-	cfg.EndPoint = "http://" + cfg.Address + "/update/"
+	//cfg.EndPoint = "http://" + cfg.Address + "/update/"
+	cfg.EndPoint = "http://" + cfg.Address + "/updates/"
 
 	return &cfg, nil
 }
