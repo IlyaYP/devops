@@ -42,13 +42,13 @@ func run() error {
 		if cfg.StoreFile == "" {
 			st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
 		} else {
-			stt, err := infile.NewFileStorage(cfg) // Q: и тут
+			stt, err := infile.NewFileStorage(context.Background(), cfg) // Q: и тут
 			if err != nil {
 				log.Println(err)
 				return err
 			}
 			st = stt // Q: Что получается я созадю копию структуры или указателья???
-			defer stt.Close()
+			defer stt.Close(context.Background())
 		}
 	} else {
 		stt, err := postgres.NewPostgres(context.Background(), cfg.DBDsn)

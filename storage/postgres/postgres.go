@@ -60,41 +60,41 @@ func (c *Postgres) Close() {
 	c.pool.Close()
 }
 
-func (c *Postgres) PutMetric(MetricType, MetricName, MetricValue string) error {
+func (c *Postgres) PutMetric(ctx context.Context, MetricType, MetricName, MetricValue string) error {
 	switch MetricType {
 	case "gauge":
 		value, err := strconv.ParseFloat(MetricValue, 64)
 		if err != nil {
 			return err
 		}
-		return c.PutGauge(MetricName, value)
+		return c.PutGauge(ctx, MetricName, value)
 	case "counter":
 		delta, err := strconv.ParseInt(MetricValue, 10, 64)
 		if err != nil {
 			return err
 		}
-		return c.PutCounter(MetricName, delta)
+		return c.PutCounter(ctx, MetricName, delta)
 	default:
 		return fmt.Errorf("wrong type %s", MetricType)
 	}
 }
 
-func (c *Postgres) PutGauge(MetricName string, value float64) error {
-	_, err := c.pool.Exec(context.Background(), `insert into gauges(id, value) values ($1, $2)
+func (c *Postgres) PutGauge(ctx context.Context, MetricName string, value float64) error {
+	_, err := c.pool.Exec(ctx, `insert into gauges(id, value) values ($1, $2)
 	on conflict (id) do update set value=excluded.value`, MetricName, value)
 	return err
 }
 
-func (c *Postgres) PutCounter(MetricName string, delta int64) error {
-	_, err := c.pool.Exec(context.Background(), `insert into counters(id, delta) values ($1, $2)
+func (c *Postgres) PutCounter(ctx context.Context, MetricName string, delta int64) error {
+	_, err := c.pool.Exec(ctx, `insert into counters(id, delta) values ($1, $2)
 	on conflict (id) do update set delta= counters.delta + excluded.delta`, MetricName, delta)
 	return err
 }
 
-func (c *Postgres) GetMetric(MetricType, MetricName string) (string, error) {
+func (c *Postgres) GetMetric(ctx context.Context, MetricType, MetricName string) (string, error) {
 	if MetricType == "gauge" { // TODO: split into small functions
 		var value float64
-		err := c.pool.QueryRow(context.Background(), "select value from gauges where id=$1", MetricName).Scan(&value)
+		err := c.pool.QueryRow(ctx, "select value from gauges where id=$1", MetricName).Scan(&value)
 		switch err {
 		case nil:
 			return fmt.Sprintf("%v", value), nil
@@ -105,7 +105,7 @@ func (c *Postgres) GetMetric(MetricType, MetricName string) (string, error) {
 		}
 	} else if MetricType == "counter" {
 		var delta int64
-		err := c.pool.QueryRow(context.Background(), "select delta from counters where id=$1", MetricName).Scan(&delta)
+		err := c.pool.QueryRow(ctx, "select delta from counters where id=$1", MetricName).Scan(&delta)
 		switch err {
 		case nil:
 			return fmt.Sprintf("%v", delta), nil
@@ -118,10 +118,10 @@ func (c *Postgres) GetMetric(MetricType, MetricName string) (string, error) {
 		return "", fmt.Errorf("wrong type %s", MetricType)
 	}
 }
-func (c *Postgres) ReadMetrics() map[string]map[string]string {
+func (c *Postgres) ReadMetrics(ctx context.Context) map[string]map[string]string {
 	ret := make(map[string]map[string]string)
 	ret["counters"] = make(map[string]string)
-	counters, _ := c.pool.Query(context.Background(), "select * from counters")
+	counters, _ := c.pool.Query(ctx, "select * from counters")
 	defer counters.Close()
 
 	for counters.Next() {

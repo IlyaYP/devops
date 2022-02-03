@@ -35,7 +35,7 @@ func (h *Handlers) Ping() http.HandlerFunc {
 
 func (h *Handlers) ReadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		m := h.St.ReadMetrics()
+		m := h.St.ReadMetrics(r.Context())
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
 		//w.Header().Set("Content-Encoding", "gzip")
@@ -86,7 +86,7 @@ func (h *Handlers) GetHandler() http.HandlerFunc {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
 		//	chi.URLParam(r, "MName"), chi.URLParam(r, "MVal")); err != nil {
-		v, err := h.St.GetMetric(k[2], k[3])
+		v, err := h.St.GetMetric(r.Context(), k[2], k[3])
 		if err != nil {
 			if err.Error() == "wrong type" {
 				http.Error(w, err.Error(), http.StatusNotImplemented)
@@ -118,7 +118,7 @@ func (h *Handlers) UpdateHandler() http.HandlerFunc {
 		k := strings.Split(r.URL.String(), "/") // TODO: Chi not work in tests, so using old method
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
 		//	chi.URLParam(r, "MName"), chi.URLParam(r, "MVal")); err != nil {
-		if err := h.St.PutMetric(k[2], k[3], k[4]); err != nil {
+		if err := h.St.PutMetric(r.Context(), k[2], k[3], k[4]); err != nil {
 			if err.Error() == "wrong type" {
 				http.Error(w, err.Error(), http.StatusNotImplemented)
 			} else if err.Error() == "wrong value" {
@@ -179,7 +179,7 @@ func (h *Handlers) UpdateJSONHandler() http.HandlerFunc {
 				return
 			}
 
-			if err := h.St.PutMetric(m.MType, m.ID, MetricValue); err != nil {
+			if err := h.St.PutMetric(r.Context(), m.MType, m.ID, MetricValue); err != nil {
 				if err.Error() == "wrong type" {
 					http.Error(w, err.Error(), http.StatusNotImplemented)
 				} else if err.Error() == "wrong value" {
@@ -280,7 +280,7 @@ func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
 					return
 				}
 
-				if err := h.St.PutMetric(m.MType, m.ID, MetricValue); err != nil {
+				if err := h.St.PutMetric(r.Context(), m.MType, m.ID, MetricValue); err != nil {
 					if err.Error() == "wrong type" {
 						http.Error(w, err.Error(), http.StatusNotImplemented)
 					} else if err.Error() == "wrong value" {
@@ -330,7 +330,7 @@ func (h *Handlers) GetJSONHandler() http.HandlerFunc {
 				return
 			}
 
-			v, err := h.St.GetMetric(m.MType, m.ID)
+			v, err := h.St.GetMetric(r.Context(), m.MType, m.ID)
 			if err != nil {
 				if err.Error() == "wrong type" {
 					http.Error(w, err.Error(), http.StatusNotImplemented)

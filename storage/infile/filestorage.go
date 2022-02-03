@@ -1,6 +1,7 @@
 package infile
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/IlyaYP/devops/cmd/server/config"
@@ -28,7 +29,7 @@ type FileStorage struct {
 	dirty         bool
 }
 
-func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
+func NewFileStorage(ctx context.Context, cfg *config.Config) (*FileStorage, error) {
 
 	s := new(FileStorage)
 	s.cfg = cfg
@@ -49,26 +50,26 @@ func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
 	s.dirty = false
 
 	if cfg.Restore {
-		if err := s.Restore(); err != nil {
+		if err := s.Restore(ctx); err != nil {
 			log.Println(err.Error())
 		}
 	}
 	return s, nil
 }
 
-func (c *FileStorage) Close() error {
-	_ = c.Save()
+func (c *FileStorage) Close(ctx context.Context) error {
+	_ = c.Save(ctx)
 	return c.file.Close()
 }
 
-func (c *FileStorage) PutMetric(MetricType, MetricName, MetricValue string) error {
-	if err := c.MemStorage.PutMetric(MetricType, MetricName, MetricValue); err != nil {
+func (c *FileStorage) PutMetric(ctx context.Context, MetricType, MetricName, MetricValue string) error {
+	if err := c.MemStorage.PutMetric(ctx, MetricType, MetricName, MetricValue); err != nil {
 		return err
 	}
 	c.dirty = true
 	//if time.Now().Sub(c.lastWrite) >= c.StoreInterval { // by autotest
 	if time.Since(c.lastWrite) >= c.StoreInterval {
-		time.AfterFunc(time.Duration(1)*time.Second, c.DelayedSave)
+		time.AfterFunc(time.Duration(1)*time.Second, func() { c.DelayedSave(ctx) })
 		c.lastWrite = time.Now().Add(time.Duration(1) * time.Second)
 	}
 
@@ -77,22 +78,22 @@ func (c *FileStorage) PutMetric(MetricType, MetricName, MetricValue string) erro
 	return nil
 }
 
-func (c *FileStorage) DelayedSave() {
-	if err := c.Save(); err != nil {
+func (c *FileStorage) DelayedSave(ctx context.Context) {
+	if err := c.Save(ctx); err != nil {
 		log.Println(err)
 		return
 	}
-	time.AfterFunc(c.StoreInterval, c.CheckState)
+	time.AfterFunc(c.StoreInterval, func() { c.CheckState(ctx) })
 	c.lastWrite = time.Now()
 }
 
-func (c *FileStorage) CheckState() {
+func (c *FileStorage) CheckState(ctx context.Context) {
 	if c.dirty {
-		c.DelayedSave()
+		c.DelayedSave(ctx)
 	}
 }
 
-func (c *FileStorage) Restore() error {
+func (c *FileStorage) Restore(ctx context.Context) error {
 	for c.decoder.More() {
 		var m internal.Metrics
 		var MetricValue string
@@ -110,7 +111,7 @@ func (c *FileStorage) Restore() error {
 			return fmt.Errorf("wrong type")
 		}
 
-		if err := c.MemStorage.PutMetric(m.MType, m.ID, MetricValue); err != nil {
+		if err := c.MemStorage.PutMetric(ctx, m.MType, m.ID, MetricValue); err != nil {
 			return err
 		}
 	}
@@ -118,7 +119,7 @@ func (c *FileStorage) Restore() error {
 	return nil
 }
 
-func (c *FileStorage) Save() error {
+func (c *FileStorage) Save(ctx context.Context) error {
 	c.fm.Lock()
 	defer c.fm.Unlock()
 
@@ -130,7 +131,7 @@ func (c *FileStorage) Save() error {
 		log.Println(err)
 	}
 
-	m := c.MemStorage.ReadMetrics()
+	m := c.MemStorage.ReadMetrics(ctx)
 	for k, v := range m {
 		for kk, vv := range v {
 			if k == "gauge" {
