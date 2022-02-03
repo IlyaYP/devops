@@ -2,9 +2,9 @@ package main
 
 import (
 	"bytes"
-	"flag"
+	"context"
+	"github.com/IlyaYP/devops/cmd/agent/config"
 	"github.com/IlyaYP/devops/internal"
-	"github.com/caarlos0/env/v6"
 	"log"
 	"os"
 	"os/signal"
@@ -12,66 +12,44 @@ import (
 	"time"
 )
 
-//type config struct {
-//	Address        string `env:"ADDRESS" envDefault:"localhost:8080"`
-//	ReportInterval int    `env:"REPORT_INTERVAL" envDefault:"10"`
-//	PoolInterval   int    `env:"POLL_INTERVAL" envDefault:"2"`
-//}
-
-//type config struct {
-//	Address        string `env:"ADDRESS"`
-//	ReportInterval int    `env:"REPORT_INTERVAL"`
-//	PoolInterval   int    `env:"POLL_INTERVAL"`
-//}
-type config struct {
-	Address        string        `env:"ADDRESS"`
-	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
-	PoolInterval   time.Duration `env:"POLL_INTERVAL"`
-}
-
-var cfg config
-
-func init() {
-	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
-	//flag.IntVar(&cfg.ReportInterval, "r", 10, "Report interval in seconds")
-	//flag.IntVar(&cfg.PoolInterval, "p", 2, "Poll interval in seconds")
-	flag.DurationVar(&cfg.ReportInterval, "r", time.Duration(10)*time.Second, "Report interval in seconds")
-	flag.DurationVar(&cfg.PoolInterval, "p", time.Duration(2)*time.Second, "Poll interval in seconds")
-}
-
 func main() {
-	flag.Parse()
-	if err := env.Parse(&cfg); err != nil {
-		log.Fatal(err)
+	if err := run(); err != nil {
+		os.Exit(1)
 	}
-	log.Println("Agent start using args:ADDRESS", cfg.Address, "REPORT_INTERVAL",
-		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval)
-	//pollInterval := time.Duration(cfg.PoolInterval) * time.Second
-	//reportInterval := time.Duration(cfg.ReportInterval) * time.Second
-	pollInterval := cfg.PoolInterval
-	reportInterval := cfg.ReportInterval
+}
 
-	endPoint := "http://" + cfg.Address + "/update/"
-	quit := make(chan os.Signal, 2)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+func run() error {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	log.Println("Agent start using args:ADDRESS", cfg.Address, "REPORT_INTERVAL",
+		cfg.ReportInterval, "POLL_INTERVAL", cfg.PoolInterval, "KEY", cfg.Key)
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer stop()
+
 	var buf bytes.Buffer
 
-	getMetrics := internal.NewMonitor(&buf)
-	poll := time.Tick(pollInterval)
-	report := time.Tick(reportInterval)
+	Metrics := internal.NewRTM(&buf, cfg.Key)
+	Metrics.PoolInterval = cfg.PoolInterval
+	go Metrics.Run(ctx)
+	report := time.Tick(cfg.ReportInterval)
 breakFor:
 	for {
 		select {
-		case <-poll:
-			getMetrics()
+		case <-ctx.Done():
+			log.Println("Shutdown Agent ...")
+			break breakFor
 		case <-report:
-			if err := internal.SendBufRetry(endPoint, &buf); err != nil {
+			Metrics.GetJSON()
+			if err := internal.SendBufRetry(cfg.EndPoint, &buf); err != nil {
 				log.Println(err)
 				log.Println("Ok, let's try again later")
 			}
-		case <-quit:
-			log.Println("Shutdown Agent ...")
-			break breakFor
 		}
 	}
+	return nil
 }

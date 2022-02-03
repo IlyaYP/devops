@@ -1,15 +1,16 @@
 package main
 
 import (
+	"compress/flate"
 	"context"
-	"flag"
 	"github.com/IlyaYP/devops/cmd/server/config"
 	"github.com/IlyaYP/devops/cmd/server/handlers"
 	"github.com/IlyaYP/devops/storage"
 	"github.com/IlyaYP/devops/storage/infile"
 	"github.com/IlyaYP/devops/storage/inmemory"
-	"github.com/caarlos0/env/v6"
+	"github.com/IlyaYP/devops/storage/postgres"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"log"
 	"net/http"
 	"os"
@@ -18,42 +19,61 @@ import (
 	"time"
 )
 
-var cfg config.Config
-
-func init() {
-	flag.StringVar(&cfg.Address, "a", "localhost:8080", "Server address")
-	//flag.IntVar(&cfg.StoreInterval, "i", 300, "Store interval in seconds")
-	flag.DurationVar(&cfg.StoreInterval, "i", time.Duration(300)*time.Second, "Store interval in seconds")
-	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "Store file")
-	flag.BoolVar(&cfg.Restore, "r", true, "Restore data from file when start")
+func main() {
+	if err := run(); err != nil {
+		os.Exit(1)
+	}
 }
 
-func main() {
-	flag.Parse()
-	if err := env.Parse(&cfg); err != nil {
-		log.Fatal(err)
+func run() error {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Println(err)
+		return err
 	}
+
 	log.Println("Server start using args:ADDRESS", cfg.Address, "STORE_INTERVAL",
-		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore)
+		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore, "KEY",
+		cfg.Key, "DATABASE_DSN", cfg.DBDsn)
 
 	var st storage.MetricStorage
-	if cfg.StoreFile == "" {
-		st = inmemory.NewMemStorage()
+	if cfg.DBDsn == "" {
+		if cfg.StoreFile == "" {
+			st = inmemory.NewMemStorage()
+		} else {
+			stt, err := infile.NewFileStorage(context.Background(), cfg)
+			if err != nil {
+				log.Println(err)
+				return err
+			}
+			st = stt
+			defer stt.Close(context.Background())
+		}
 	} else {
-		stt, err := infile.NewFileStorage(&cfg)
+		stt, err := postgres.NewPostgres(context.Background(), cfg.DBDsn)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			return err
 		}
 		st = stt
 		defer stt.Close()
 	}
+	// Handlers
+	h := new(handlers.Handlers)
+	h.Key = cfg.Key
+	h.St = st
 
+	// Router
 	r := chi.NewRouter()
-	r.Get("/", handlers.ReadHandler(st))
-	r.Post("/update/", handlers.UpdateJSONHandler(st))
-	r.Post("/value/", handlers.GetJSONHandler(st))
-	r.Get("/value/{MType}/{MName}", handlers.GetHandler(st))
-	r.Post("/update/{MType}/{MName}/{MVal}", handlers.UpdateHandler(st))
+	compressor := middleware.NewCompressor(flate.DefaultCompression)
+	r.Use(compressor.Handler)
+	r.Get("/", h.ReadHandler())
+	r.Get("/ping", h.Ping())
+	r.Post("/update/", h.UpdateJSONHandler())
+	r.Post("/updates/", h.UpdatesJSONHandler())
+	r.Post("/value/", h.GetJSONHandler())
+	r.Get("/value/{MType}/{MName}", h.GetHandler())
+	r.Post("/update/{MType}/{MName}/{MVal}", h.UpdateHandler())
 
 	srv := &http.Server{
 		Addr:    cfg.Address, //":8080",
@@ -75,12 +95,14 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server Shutdown:", err)
+		log.Println("Server Shutdown:", err)
+		return err
 	}
-	// catching ctx.Done(). timeout of 5 seconds.
+
 	log.Println("timeout of 5 seconds.")
+	// catching ctx.Done(). timeout of 5 seconds.
 	<-ctx.Done()
 
 	log.Println("Server exiting")
-
+	return nil
 }

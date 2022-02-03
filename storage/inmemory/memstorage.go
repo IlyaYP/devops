@@ -1,6 +1,8 @@
 package inmemory
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/IlyaYP/devops/storage"
 	"log"
@@ -8,7 +10,7 @@ import (
 	"sync"
 )
 
-var _ storage.MetricStorage = (*MemStorage)(nil) // Q: Вот это для чего? я ещё не изучил (
+var _ storage.MetricStorage = (*MemStorage)(nil)
 
 type MemStorage struct {
 	sync.RWMutex
@@ -22,7 +24,14 @@ func NewMemStorage() *MemStorage {
 	return &s
 }
 
-func (s *MemStorage) PutMetric(MetricType, MetricName, MetricValue string) error {
+func (s *MemStorage) Ping(ctx context.Context) error {
+	if s.Mtr != nil {
+		return nil
+	}
+	return errors.New("MemStorage.Ping")
+}
+
+func (s *MemStorage) PutMetric(ctx context.Context, MetricType, MetricName, MetricValue string) error {
 	//fmt.Println("Put:", MetricType, MetricName, MetricValue)
 	// To write to the storage, take the write lock:
 	s.Lock()
@@ -57,7 +66,7 @@ func (s *MemStorage) PutMetric(MetricType, MetricName, MetricValue string) error
 	return nil
 }
 
-func (s *MemStorage) GetMetric(MetricType, MetricName string) (string, error) {
+func (s *MemStorage) GetMetric(ctx context.Context, MetricType, MetricName string) (string, error) {
 	// To read from the storage, take the read lock:
 	s.RLock()
 	defer s.RUnlock()
@@ -73,7 +82,8 @@ func (s *MemStorage) GetMetric(MetricType, MetricName string) (string, error) {
 
 	return n, nil
 }
-func (s *MemStorage) ReadMetrics() map[string]map[string]string {
+
+func (s *MemStorage) ReadMetrics(ctx context.Context) map[string]map[string]string {
 	s.RLock()
 	defer s.RUnlock()
 	ret := make(map[string]map[string]string)
