@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-var _ storage.MetricStorage = (*MemStorage)(nil) // Q: Вот это для чего? я ещё не изучил (
+var _ storage.MetricStorage = (*MemStorage)(nil)
 
 type MemStorage struct {
 	sync.RWMutex

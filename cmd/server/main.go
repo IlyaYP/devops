@@ -36,18 +36,17 @@ func run() error {
 		cfg.StoreInterval, "STORE_FILE", cfg.StoreFile, "RESTORE", cfg.Restore, "KEY",
 		cfg.Key, "DATABASE_DSN", cfg.DBDsn)
 
-	// Storage Q: Решил пока оставить тут, но возможно лучше перенести в config?
-	var st storage.MetricStorage // Q: Это получается что? структура указатель или что?
+	var st storage.MetricStorage
 	if cfg.DBDsn == "" {
 		if cfg.StoreFile == "" {
-			st = inmemory.NewMemStorage() // Q: тут я явно возврщаю указатель
+			st = inmemory.NewMemStorage()
 		} else {
-			stt, err := infile.NewFileStorage(context.Background(), cfg) // Q: и тут
+			stt, err := infile.NewFileStorage(context.Background(), cfg)
 			if err != nil {
 				log.Println(err)
 				return err
 			}
-			st = stt // Q: Что получается я созадю копию структуры или указателья???
+			st = stt
 			defer stt.Close(context.Background())
 		}
 	} else {
@@ -56,14 +55,13 @@ func run() error {
 			log.Println(err)
 			return err
 		}
-		st = stt // Q: Что получается я созадю копию структуры или указателья???
+		st = stt
 		defer stt.Close()
 	}
 	// Handlers
 	h := new(handlers.Handlers)
 	h.Key = cfg.Key
-	h.St = st // Q: Тот же вопрос. Опять содается копия? (я бы не хотел полодить копии,
-	// а иметь в памяти один экземпляр и передовать указатель на него)
+	h.St = st
 
 	// Router
 	r := chi.NewRouter()

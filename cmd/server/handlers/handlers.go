@@ -18,7 +18,7 @@ import (
 )
 
 type Handlers struct {
-	St  storage.MetricStorage // Q: почему сюда не могу поставить указатель? не создаю ли я копию?
+	St  storage.MetricStorage
 	Key string
 }
 
