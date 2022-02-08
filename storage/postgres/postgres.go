@@ -75,7 +75,8 @@ func (c *Postgres) PutMetric(ctx context.Context, MetricType, MetricName, Metric
 		}
 		return c.PutCounter(ctx, MetricName, delta)
 	default:
-		return fmt.Errorf("wrong type %s", MetricType)
+		//return fmt.Errorf("wrong type %s", MetricType)
+		return storage.NewTypeError(MetricType)
 	}
 }
 
@@ -99,7 +100,8 @@ func (c *Postgres) GetMetric(ctx context.Context, MetricType, MetricName string)
 		case nil:
 			return fmt.Sprintf("%v", value), nil
 		case pgx.ErrNoRows:
-			return "", fmt.Errorf("no such metric %s in DB", MetricName)
+			//return "", fmt.Errorf("no such metric %s in DB", MetricName)
+			return "", storage.NewMetricError(MetricName)
 		default:
 			return "", err
 		}
@@ -110,12 +112,14 @@ func (c *Postgres) GetMetric(ctx context.Context, MetricType, MetricName string)
 		case nil:
 			return fmt.Sprintf("%v", delta), nil
 		case pgx.ErrNoRows:
-			return "", fmt.Errorf("no such metric %s in DB", MetricName)
+			//return "", fmt.Errorf("no such metric %s in DB", MetricName)
+			return "", storage.NewMetricError(MetricName)
 		default:
 			return "", err
 		}
 	} else {
-		return "", fmt.Errorf("wrong type %s", MetricType)
+		//return "", fmt.Errorf("wrong type %s", MetricType)
+		return "", storage.NewTypeError(MetricType)
 	}
 }
 func (c *Postgres) ReadMetrics(ctx context.Context) map[string]map[string]string {
