@@ -67,7 +67,6 @@ func (c *FileStorage) PutMetric(ctx context.Context, MetricType, MetricName, Met
 		return err
 	}
 	c.dirty = true
-	//if time.Now().Sub(c.lastWrite) >= c.StoreInterval { // by autotest
 	if time.Since(c.lastWrite) >= c.StoreInterval {
 		time.AfterFunc(time.Duration(1)*time.Second, func() { c.DelayedSave(ctx) })
 		c.lastWrite = time.Now().Add(time.Duration(1) * time.Second)
@@ -108,7 +107,7 @@ func (c *FileStorage) Restore(ctx context.Context) error {
 		} else if m.MType == "counter" {
 			MetricValue = fmt.Sprintf("%v", *m.Delta)
 		} else {
-			return fmt.Errorf("wrong type")
+			return storage.NewTypeError(m.MType)
 		}
 
 		if err := c.MemStorage.PutMetric(ctx, m.MType, m.ID, MetricValue); err != nil {

@@ -3,7 +3,6 @@ package inmemory
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/IlyaYP/devops/storage"
 	"log"
 	"strconv"
@@ -39,16 +38,16 @@ func (s *MemStorage) PutMetric(ctx context.Context, MetricType, MetricName, Metr
 	t, ok := s.Mtr[MetricType]
 	if !ok {
 		log.Println("Error:", MetricType, MetricName, MetricValue)
-		return fmt.Errorf("wrong type")
+		return storage.NewTypeError(MetricType)
 	}
 	if MetricType == "gauge" {
 		if _, err := strconv.ParseFloat(MetricValue, 64); err != nil {
-			return fmt.Errorf("wrong value")
+			return err
 		}
 	} else if MetricType == "counter" {
 		v, err := strconv.ParseInt(MetricValue, 10, 64)
 		if err != nil {
-			return fmt.Errorf("wrong value")
+			return err
 		}
 		tv, ok := t[MetricName]
 		if !ok {
@@ -56,7 +55,7 @@ func (s *MemStorage) PutMetric(ctx context.Context, MetricType, MetricName, Metr
 		}
 		vv, err := strconv.ParseInt(tv, 10, 64)
 		if err != nil {
-			return fmt.Errorf("strconv.ParseInt error")
+			return err
 		}
 		MetricValue = strconv.FormatInt(v+vv, 10)
 	}
@@ -72,12 +71,12 @@ func (s *MemStorage) GetMetric(ctx context.Context, MetricType, MetricName strin
 	defer s.RUnlock()
 	t, ok := s.Mtr[MetricType]
 	if !ok {
-		return "", fmt.Errorf("wrong type")
+		return "", storage.NewTypeError(MetricType)
 	}
 
 	n, ok := t[MetricName]
 	if !ok {
-		return "", fmt.Errorf("no such metric")
+		return "", storage.NewMetricError(MetricName)
 	}
 
 	return n, nil
