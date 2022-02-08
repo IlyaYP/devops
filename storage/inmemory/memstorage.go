@@ -71,13 +71,11 @@ func (s *MemStorage) GetMetric(ctx context.Context, MetricType, MetricName strin
 	defer s.RUnlock()
 	t, ok := s.Mtr[MetricType]
 	if !ok {
-		//return "", fmt.Errorf("wrong type")
 		return "", storage.NewTypeError(MetricType)
 	}
 
 	n, ok := t[MetricName]
 	if !ok {
-		//return "", fmt.Errorf("no such metric")
 		return "", storage.NewMetricError(MetricName)
 	}
 

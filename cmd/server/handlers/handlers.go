@@ -96,13 +96,6 @@ func (h *Handlers) GetHandler() http.HandlerFunc {
 			default:
 				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
-			//if err.Error() == "wrong type" {
-			//	http.Error(w, err.Error(), http.StatusNotImplemented)
-			//} else if strings.HasPrefix(err.Error(), "no such metric") {
-			//	http.Error(w, err.Error(), http.StatusNotFound)
-			//} else {
-			//	http.Error(w, err.Error(), http.StatusBadRequest)
-			//}
 			log.Println(err)
 			return
 		}
@@ -128,13 +121,6 @@ func (h *Handlers) UpdateHandler() http.HandlerFunc {
 		//if err := st.PutMetric(context.Background(), chi.URLParam(r, "MType"),
 		//	chi.URLParam(r, "MName"), chi.URLParam(r, "MVal")); err != nil {
 		if err := h.St.PutMetric(r.Context(), k[2], k[3], k[4]); err != nil {
-			//if err.Error() == "wrong type" {
-			//	http.Error(w, err.Error(), http.StatusNotImplemented)
-			//} else if err.Error() == "wrong value" {
-			//	http.Error(w, err.Error(), http.StatusBadRequest)
-			//} else {
-			//	http.Error(w, "unknown error", http.StatusBadRequest)
-			//}
 			switch err.(type) {
 			case *storage.TypeError:
 				http.Error(w, err.Error(), http.StatusNotImplemented)
@@ -197,13 +183,6 @@ func (h *Handlers) UpdateJSONHandler() http.HandlerFunc {
 			}
 
 			if err := h.St.PutMetric(r.Context(), m.MType, m.ID, MetricValue); err != nil {
-				//if err.Error() == "wrong type" {
-				//	http.Error(w, err.Error(), http.StatusNotImplemented)
-				//} else if err.Error() == "wrong value" {
-				//	http.Error(w, err.Error(), http.StatusBadRequest)
-				//} else {
-				//	http.Error(w, "unknown error", http.StatusBadRequest)
-				//}
 				switch err.(type) {
 				case *storage.TypeError:
 					http.Error(w, err.Error(), http.StatusNotImplemented)
@@ -304,13 +283,6 @@ func (h *Handlers) UpdatesJSONHandler() http.HandlerFunc {
 				}
 
 				if err := h.St.PutMetric(r.Context(), m.MType, m.ID, MetricValue); err != nil {
-					//if err.Error() == "wrong type" {
-					//	http.Error(w, err.Error(), http.StatusNotImplemented)
-					//} else if err.Error() == "wrong value" {
-					//	http.Error(w, err.Error(), http.StatusBadRequest)
-					//} else {
-					//	http.Error(w, "unknown error", http.StatusBadRequest)
-					//}
 					switch err.(type) {
 					case *storage.TypeError:
 						http.Error(w, err.Error(), http.StatusNotImplemented)
@@ -361,13 +333,6 @@ func (h *Handlers) GetJSONHandler() http.HandlerFunc {
 
 			v, err := h.St.GetMetric(r.Context(), m.MType, m.ID)
 			if err != nil {
-				//if err.Error() == "wrong type" {
-				//	http.Error(w, err.Error(), http.StatusNotImplemented)
-				//} else if strings.HasPrefix(err.Error(), "no such metric") {
-				//	http.Error(w, err.Error(), http.StatusNotFound)
-				//} else {
-				//	http.Error(w, err.Error(), http.StatusBadRequest)
-				//}
 				switch err.(type) {
 				case *storage.TypeError:
 					http.Error(w, err.Error(), http.StatusNotImplemented)
