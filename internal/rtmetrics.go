@@ -8,11 +8,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
 	"log"
 	"math/rand"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -21,6 +23,7 @@ const (
 )
 
 type RunTimeMetrics struct {
+	sync.RWMutex
 	Gauge        map[string]float64
 	Counter      map[string]int64
 	rnd          *rand.Rand
@@ -73,6 +76,9 @@ func NewMonitor(buf *bytes.Buffer, key string) func() {
 }
 
 func (rm *RunTimeMetrics) addToSlice() {
+	rm.Lock()
+	defer rm.Unlock()
+
 	if rm.Key == "" {
 		for id, value := range rm.Gauge {
 			rm.slice = append(rm.slice, MetricsStorage{ID: id, MType: "gauge", Value: value})
@@ -94,6 +100,8 @@ func (rm *RunTimeMetrics) addToSlice() {
 
 // GetJSON writes metrics to buf as JSON Array
 func (rm *RunTimeMetrics) GetJSON() *bytes.Buffer {
+	rm.Lock()
+	defer rm.Unlock()
 	var m []Metrics
 	for i, metricsStorage := range rm.slice {
 		if metricsStorage.MType == "counter" {
@@ -113,6 +121,8 @@ func (rm *RunTimeMetrics) GetJSON() *bytes.Buffer {
 }
 
 func (rm *RunTimeMetrics) Update() {
+	rm.Lock()
+	defer rm.Unlock()
 	runtime.ReadMemStats(&rm.rtm)
 
 	rm.Counter["PollCount"]++
@@ -144,14 +154,25 @@ func (rm *RunTimeMetrics) Update() {
 	rm.Gauge["StackInuse"] = float64(rm.rtm.StackInuse)
 	rm.Gauge["StackSys"] = float64(rm.rtm.StackSys)
 	rm.Gauge["Sys"] = float64(rm.rtm.Sys)
+}
+
+func (rm *RunTimeMetrics) UpdatePS() {
 	// gopsutil
 	v, _ := mem.VirtualMemory()
 	info, _ := load.Avg()
+	rm.Lock()
+	defer rm.Unlock()
 	rm.Gauge["TotalMemory"] = float64(v.Total)
 	rm.Gauge["FreeMemory"] = float64(v.Free)
-	rm.Gauge["CPUutilization1"] = info.Load1
 	// just try ;)) Вероятно ошибка в тесте потому что при не изменении этой метрики, а она не изменяется, тест не проходит
 	rm.Gauge["TotalMemory"] = rm.Gauge["TotalMemory"] * rm.rnd.Float64()
+
+	rm.Gauge["CPUutilization0"] = info.Load1
+
+	cps, _ := cpu.Percent(0, true)
+	for i, cp := range cps {
+		rm.Gauge[fmt.Sprintf("CPUutilization%d", i+1)] = cp
+	}
 }
 
 func (rm *RunTimeMetrics) Run(ctx context.Context) {
@@ -169,7 +190,18 @@ func (rm *RunTimeMetrics) Run(ctx context.Context) {
 }
 
 func (rm *RunTimeMetrics) Collect() {
-	rm.Update()
+	var wg sync.WaitGroup
+	go func() {
+		wg.Add(1)
+		rm.Update()
+		wg.Done()
+	}()
+	go func() {
+		wg.Add(1)
+		rm.UpdatePS()
+		wg.Done()
+	}()
+	wg.Wait()
 	rm.addToSlice()
 }
 
